@@ -5,17 +5,17 @@ Lichtsteuerung für Leuchtmittel unterschiedlicher Hersteller
 ## Features
 * Gruppierung beliebig vieler Lampen/Leuchtmittel
 * Verwendung gemischter Lampen/Farbsystemen und Umrechnung der Farbsysteme (Hex,Rgb,Hsl,Xy)
-* Möglichkeit der Zuweisung von defaultwerten zu jedem Leuchtmittel
+* Möglichkeit der Zuweisung von defaultwerten zu jedem Leuchtmittel (gleiche Helligkeit trotz unterschiedlich leistungsstarker Leuchtmittel)
 * Ramping (langsame Änderung der Helligkeit bis Zielwert) für on und off
 * AutoOff nach Zeit / Kein off bei Bewegung 
 * AutoOn bei Bewegung
 * Override on (Putzlicht)
-* Adaptive Helligkeit
-* Adaptive Farbtemperatur
-* 
+* Adaptive Helligkeit (Bei Aussenhelligkeit über 1000 Lux volle Helligkeit (100%), darunter linear dunkler bis 0 Lux (2%))
+* Adaptive Farbtemperatur (Tags Tageslichtweiss, abends warmweiss)
+* Blinken (Alarm, Türklingel, etc.)
 
 ## Installation
-Nachdem ihr das Skript in ein neues Js Projekt kopiert habt, müßt ihr dem Skript Eure Leuchtmittel bekannt machen, es wird mindestens ein Schaltdatenpunkt (an/aus) erwartet. D.h. ihr könnt hier auch Steckdosen schalten mit herkömmlichen, nicht smarten, Leuchtmitteln.
+Nachdem ihr das Skript in ein neues Js Projekt kopiert habt, müßt ihr dem Skript Eure Leuchtmittel bekannt machen, es wird mindestens ein Schaltdatenpunkt (an/aus) erwartet. D.h. ihr könnt hier auch Steckdosen schalten mit herkömmlichen, nicht smarten, Leuchtmitteln, bzw. auch Geräte die keine Lampen sind.
 Optional könnt ihr Datenpunkte für Helligkeit, Farbe, Farbtemperatur und Farb/Weiss Modus umschaltung angeben. Zu den jeweiligen Einträgen gehören dann noch folgende Zusatzangaben , die jweiligen min/max Werte des Datenpunktes, sowie die gewünschten Defaultwerte, nachfolgend das ganze im Detail:
 
 Als erstes gebt Ihr den gewünschten Gruppen Namen im entsprechenden Array an, hier wies bei mir aussieht:
@@ -35,5 +35,7 @@ Info: Die min. und max. Werte, werden benötigt da es sehr viele verschiedene Va
 
 
 ## Changelog
+### V0.0.2 (12.09.2020)
+* Change: Datenpunktstruktur und -benamung geändert und neue hinzugefügt.
 ### V0.0.1 (19.08.2020)
 * Add: Init

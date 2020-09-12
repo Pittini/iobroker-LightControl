@@ -1,8 +1,9 @@
-let Version = "0.0.1" //Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
+let Version = "0.0.2" //Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
 log("starting LightControl V." + Version);
 
-let praefix = "javascript.0.Lichtsteuerung" // Skriptordner
-let LuxSensor = "wiffi-wz.0.root.192_168_2_131.w_lux"; // Datenpunkt des globalen Luxsensors
+const praefix = "javascript.0.Lichtsteuerung" // Skriptordner
+const LuxSensor = "wiffi-wz.0.root.192_168_2_131.w_lux"; // Datenpunkt des globalen Luxsensors
+const IsPresence = ""; // Datenpunkt für Anwesenheit
 const logging = true; // Logging an/aus
 
 //Ab hier nix mehr ändern
@@ -11,7 +12,7 @@ const States = []; //Array mit anzulegenden Dps
 let IsLuxEvening = false;
 let IsTimeSlotActive = false; //Timeslot für Lux Autoauslösung
 let ActualLux = getState(LuxSensor).val; //Aktueller Luxwert
-//Jede Lightgroup hat x Devices. Jedes Device hat max. 4 Sätze von Dps für an/aus, Helligkeit, Farbtemperatur, Farbe
+//Jede Lightgroup hat x Devices. Jedes Device hat max. 4 Sätze von Dps für 0=an/aus, 1=Helligkeit, 2=Farbtemperatur, 3=Farbe, 4=Umschaltung color/weiss
 //Gruppe - Lampen - Funktion (onoff/ct/bri) -  Eigenschaften (id, min Wert, max. Wert, default Wert bei an)
 const LightGroups = []; // Array mit den Daten der Device Datenpunkte
 const OldPowerState = []; //Speichert bei autom, Aktionen den alten Power Zustand um diesen wiederherstellen zu können
@@ -42,7 +43,7 @@ LightGroups[0][2][3] = ["yeelight-2.0.color-0x0000000007e3cadb.control.rgb", "he
 LightGroups[0][2][4] = ["yeelight-2.0.color-0x0000000007e3cadb.control.color_mode", true, false];
 
 
-LightGroups[0][3] = []; //Strahler Tolilettenvorraum
+LightGroups[0][3] = []; //Strahler Toillettenvorraum
 LightGroups[0][3][0] = ["yeelight-2.0.White1.control.power", true, false];
 LightGroups[0][3][1] = ["yeelight-2.0.White1.control.active_bright", 0, 100, 5];
 LightGroups[0][3][2] = ["yeelight-2.0.White1.control.ct", 6500, 2700];
@@ -147,10 +148,10 @@ LightGroups[8][0][4] = ["yeelight-2.0.color-0x0000000007e3cadb.control.color_mod
 
 
 let CheckCount = 0;
-let Dps = [".Power", ".Bri", ".Ct", ".Color", ".AutoOffTime", ".AutoOff", ".NoAutoOffWhenMotion", ".MotionDp", ".AutoOn", ".AutoOnLux", ".LuxDp", ".AdaptiveBri", ".AdaptiveCt", ".RampOn", ".RampOff", ".RampOnTime", ".RampOffTime", ".BlinkEnabled", ".Blink", ".OnOverride", ".UseBriDefaults", ".AutoOnBri", ".AutoOnColor",".IsMotion"]
+let Dps = [".Power", ".Bri", ".Ct", ".Color", ".AutoOff_Timed.AutoOffTime", ".AutoOff_Timed.Enabled", ".AutoOff_Timed.NoAutoOffWhenMotion", ".MotionSensors.Sensor0", ".AutoOn_Motion.Enabled", ".AutoOn_Motion.MaxLux", ".LuxDp", ".AdaptiveBri", ".AdaptiveCt", ".RampOn.Enabled", ".RampOff.Enabled", ".RampOn.Time", ".RampOff.Time", ".BlinkEnabled", ".Blink", ".OnOverride", ".UseBriDefaults", ".AutoOn_Motion.AutoOnBri", ".AutoOn_Motion.AutoOnColor", ".IsMotion", ".AutoOn_Lux.Enabled", ".AutoOn_Lux.MinLux"]
 
 // 0=".Power", 1=".Bri",2= ".Ct",3= ".Color", 4=".AutoOffTime", 5=".AutoOff", 6=".NoAutoOffWhenMotion", 7=".MotionDp", 8=".AutoOn", 9=".AutoOnLux", 10=".LuxDp", 11=".AdaptiveBri", 12=".AdaptiveCt",
-// 13=".RampOn", 14=".RampOff", 15=".RampOnTime", 16=".RampOffTime", 17=".BlinkEnabled", 18=".Blink", 19=".OnOverride", 20= ".UseBriDefaults", 21=".AutoOnBri", 22=".AutoOnColor", 23=".IsMotion", ..., 
+// 13=".RampOn.Enabled", 14=".RampOff.Enabled", 15=".RampOn.Time", 16=".RampOff.Time", 17=".BlinkEnabled", 18=".Blink", 19=".OnOverride", 20= ".UseBriDefaults", 21=".AutoOnBri", 22=".AutoOnColor", 23=".IsMotion", ..., 
 //ab 50 interne Werte - 50=Gruppenname
 
 
@@ -164,17 +165,17 @@ for (let x = 0; x < Groups.length; x++) {
     DpCount++;
     States[DpCount] = { id: praefix + "." + x + ".Color", initial: "#FFFFFF", forceCreation: false, common: { read: true, write: true, name: "Farbe", type: "string", def: "#FFFFFF" } };
     DpCount++;
-    States[DpCount] = { id: praefix + "." + x + ".AutoOffTime", initial: 0, forceCreation: false, common: { read: true, write: true, name: "Zeit nach der die Gruppe abgeschaltet wird", type: "number", unit: "s", def: 0 } };
+    States[DpCount] = { id: praefix + "." + x + ".AutoOff_Timed.AutoOffTime", initial: 0, forceCreation: false, common: { read: true, write: true, name: "Zeit nach der die Gruppe abgeschaltet wird", type: "number", unit: "s", def: 0 } };
     DpCount++;
-    States[DpCount] = { id: praefix + "." + x + ".AutoOff", initial: false, forceCreation: false, common: { read: true, write: true, name: "Gruppe automatisch abschalten?", type: "boolean", def: false } };
+    States[DpCount] = { id: praefix + "." + x + ".AutoOff_Timed.Enabled", initial: false, forceCreation: false, common: { read: true, write: true, name: "Gruppe automatisch abschalten?", type: "boolean", def: false } };
     DpCount++;
-    States[DpCount] = { id: praefix + "." + x + ".NoAutoOffWhenMotion", initial: false, forceCreation: false, common: { read: true, write: true, name: "Kein AutoOff bei erkannter Bewegung?", type: "boolean", def: false } };
+    States[DpCount] = { id: praefix + "." + x + ".AutoOff_Timed.NoAutoOffWhenMotion", initial: false, forceCreation: false, common: { read: true, write: true, name: "Kein AutoOff bei erkannter Bewegung?", type: "boolean", def: false } };
     DpCount++;
-    States[DpCount] = { id: praefix + "." + x + ".MotionDp", initial: "", forceCreation: false, common: { read: true, write: true, name: "Datenpunkt des Bewegungsmelders?", type: "string", def: "" } };
+    States[DpCount] = { id: praefix + "." + x + ".MotionSensors.Sensor0", initial: "", forceCreation: false, common: { read: true, write: true, name: "Datenpunkt des 1. Bewegungsmelders?", type: "string", def: "" } };
     DpCount++;
-    States[DpCount] = { id: praefix + "." + x + ".AutoOn", initial: false, forceCreation: false, common: { read: true, write: true, name: "Gruppe bei Bewegung automatisch anschalten?", type: "boolean", def: false } };
+    States[DpCount] = { id: praefix + "." + x + ".AutoOn_Motion.Enabled", initial: false, forceCreation: false, common: { read: true, write: true, name: "Gruppe bei Bewegung automatisch anschalten?", type: "boolean", def: false } };
     DpCount++;
-    States[DpCount] = { id: praefix + "." + x + ".AutoOnLux", initial: 80, forceCreation: false, common: { read: true, write: true, name: "Helligkeit für AutoOn", type: "number", unit: "Lux", def: 80 } };
+    States[DpCount] = { id: praefix + "." + x + ".AutoOn_Motion.MaxLux", initial: 80, forceCreation: false, common: { read: true, write: true, name: "Mindesthelligkeit für AutoOn", type: "number", unit: "Lux", def: 80 } };
     DpCount++;
     States[DpCount] = { id: praefix + "." + x + ".LuxDp", initial: "", forceCreation: false, common: { read: true, write: true, name: "Datenpunkt des Helligkeitssensors?", type: "string", def: "" } };
     DpCount++;
@@ -182,13 +183,13 @@ for (let x = 0; x < Groups.length; x++) {
     DpCount++;
     States[DpCount] = { id: praefix + "." + x + ".AdaptiveCt", initial: false, forceCreation: false, common: { read: true, write: true, name: "Farbtemperatur durch Tageszeit steuern?", type: "boolean", def: false } };
     DpCount++;
-    States[DpCount] = { id: praefix + "." + x + ".RampOn", initial: false, forceCreation: false, common: { read: true, write: true, name: "Bei Anschalten Helligkeit langsam hochfahren?", type: "boolean", def: false } };
+    States[DpCount] = { id: praefix + "." + x + ".RampOn.Enabled", initial: false, forceCreation: false, common: { read: true, write: true, name: "Bei Anschalten Helligkeit langsam hochfahren?", type: "boolean", def: false } };
     DpCount++;
-    States[DpCount] = { id: praefix + "." + x + ".RampOff", initial: false, forceCreation: false, common: { read: true, write: true, name: "Bei Ausschalten Helligkeit langsam runterfahren?", type: "boolean", def: false } };
+    States[DpCount] = { id: praefix + "." + x + ".RampOff.Enabled", initial: false, forceCreation: false, common: { read: true, write: true, name: "Bei Ausschalten Helligkeit langsam runterfahren?", type: "boolean", def: false } };
     DpCount++;
-    States[DpCount] = { id: praefix + "." + x + ".RampOnTime", initial: 5, forceCreation: false, common: { read: true, write: true, name: "Zeit für RampOn", type: "number", unit: "s", def: 5 } };
+    States[DpCount] = { id: praefix + "." + x + ".RampOn.Time", initial: 5, forceCreation: false, common: { read: true, write: true, name: "Zeit für RampOn", type: "number", unit: "s", def: 5 } };
     DpCount++;
-    States[DpCount] = { id: praefix + "." + x + ".RampOffTime", initial: 10, forceCreation: false, common: { read: true, write: true, name: "Zeit für RampOff", type: "number", unit: "s", def: 10 } };
+    States[DpCount] = { id: praefix + "." + x + ".RampOff.Time", initial: 10, forceCreation: false, common: { read: true, write: true, name: "Zeit für RampOff", type: "number", unit: "s", def: 10 } };
     DpCount++;
     States[DpCount] = { id: praefix + "." + x + ".BlinkEnabled", initial: true, forceCreation: false, common: { read: true, write: true, name: "Aktiviert kurzes blinken", type: "boolean", def: true } };
     DpCount++;
@@ -198,11 +199,15 @@ for (let x = 0; x < Groups.length; x++) {
     DpCount++;
     States[DpCount] = { id: praefix + "." + x + ".UseBriDefaults", initial: false, forceCreation: false, common: { read: true, write: true, name: "Sollen die Helligkeits Defaultwerte der Devices verwendet werden?", type: "boolean", def: false } };
     DpCount++;
-    States[DpCount] = { id: praefix + "." + x + ".AutoOnBri", initial: 2, forceCreation: false, common: { read: true, write: true, name: "Helligkeit bei AutoOn", type: "number", unit: "%", def: 2 } };
+    States[DpCount] = { id: praefix + "." + x + ".AutoOn_Motion.AutoOnBri", initial: 2, forceCreation: false, common: { read: true, write: true, name: "Helligkeit bei AutoOn", type: "number", unit: "%", def: 2 } };
     DpCount++;
-    States[DpCount] = { id: praefix + "." + x + ".AutoOnColor", initial: "red", forceCreation: false, common: { read: true, write: true, name: "Farbe bei AutoOn?", type: "string", def: "red" } };
+    States[DpCount] = { id: praefix + "." + x + ".AutoOn_Motion.AutoOnColor", initial: "red", forceCreation: false, common: { read: true, write: true, name: "Farbe bei AutoOn?", type: "string", def: "red" } };
     DpCount++;
     States[DpCount] = { id: praefix + "." + x + ".IsMotion", initial: false, forceCreation: false, common: { read: true, write: true, name: "Summenstatus aller Bewegungsmelder", type: "boolean", def: false } };
+    DpCount++;
+    States[DpCount] = { id: praefix + "." + x + ".AutoOn_Lux.Enabled", initial: false, forceCreation: false, common: { read: true, write: true, name: "Gruppe bei Bewegung automatisch anschalten?", type: "boolean", def: false } };
+    DpCount++;
+    States[DpCount] = { id: praefix + "." + x + ".AutoOn_Lux.MinLux", initial: 80, forceCreation: false, common: { read: true, write: true, name: "Mindesthelligkeit für AutoOn", type: "number", unit: "Lux", def: 80 } };
     DpCount++;
 
 };
@@ -264,9 +269,9 @@ function ClrTimeOut(gruppe) {
     };
 }
 
-function CombineMotionSensors(){
+function CombineMotionSensors() {
 
-    
+
 }
 
 function SetAutoOff(gruppe) { //Schaltet Gruppe nach pro Gruppe vorgegbenenr Zeit aus. Berücksichtigt Bewegung.
@@ -312,7 +317,7 @@ function SetAutoOff(gruppe) { //Schaltet Gruppe nach pro Gruppe vorgegbenenr Zei
     };
 }
 // 0=".Power", 1=".Bri",2= ".Ct",3= ".Color", 4=".AutoOffTime", 5=".AutoOff", 6=".NoAutoOffWhenMotion", 7=".MotionDp", 8=".AutoOn", 9=".AutoOnLux", 10=".LuxDp", 11=".AdaptiveBri", 12=".AdaptiveCt",
-// 13=".RampOn", 14=".RampOff", 15=".RampOnTime", 16=".RampOffTime", 17=".BlinkEnabled", 18=".Blink", 19=".OnOverride", 20= ".UseBriDefaults", 21=".AutoOnBri", 22=".AutoOnColor"
+// 13=".RampOn.Enabled", 14=".RampOff.Enabled", 15=".RampOn.Time", 16=".RampOff.Time", 17=".BlinkEnabled", 18=".Blink", 19=".OnOverride", 20= ".UseBriDefaults", 21=".AutoOnBri", 22=".AutoOnColor"
 
 function SetAutoOn(gruppe) { //Schaltet Gruppe bei Bewegung an. Nutzt hierfür den normalen Schaltdatenpunkt, um direktes ausschalten via diesen zu ermöglichen.
     if (logging) log("Reaching SetAutoOn(gruppe) Gruppe=" + gruppe);
@@ -389,7 +394,7 @@ function DoPower(gruppe, onoff) { // onoff 0=aus, 1=an, 2=Gruppe um 3=Devices um
 }
 
 // 0=".Power", 1=".Bri",2= ".Ct",3= ".Color", 4=".AutoOffTime", 5=".AutoOff", 6=".NoAutoOffWhenMotion", 7=".MotionDp", 8=".AutoOn", 9=".AutoOnLux", 10=".LuxDp", 11=".AdaptiveBri", 12=".AdaptiveCt",
-// 13=".RampOn", 14=".RampOff", 15=".RampOnTime", 16=".RampOffTime", 17=".BlinkEnabled", 18=".Blink", 19=".OnOverride", 20= ".UseBriDefaults"
+// 13=".RampOn.Enabled", 14=".RampOff.Enabled", 15=".RampOn.Time", 16=".RampOff.Time", 17=".BlinkEnabled", 18=".Blink", 19=".OnOverride", 20= ".UseBriDefaults"
 
 function DoCt(gruppe, ct) { //Farbtemperatur setzen
     if (logging) log("Reaching DoCt(gruppe, ct) Gruppe=" + gruppe + " ct=" + ct + " Groupcolor=" + Groups[gruppe][3].toLowerCase())
@@ -667,7 +672,7 @@ function OnOverride(gruppe, onoff) {
 }
 
 // 0=".Power", 1=".Bri",2= ".Ct",3= ".Color", 4=".AutoOffTime", 5=".AutoOff", 6=".NoAutoOffWhenMotion", 7=".MotionDp", 8=".AutoOn", 9=".AutoOnLux", 10=".LuxDp", 11=".AdaptiveBri", 12=".AdaptiveCt",
-// 13=".RampOn", 14=".RampOff", 15=".RampOnTime", 16=".RampOffTime", 17=".BlinkEnabled", 18=".Blink", 19=".OnOverride", 20= ".UseBriDefaults"
+// 13=".RampOn.Enabled", 14=".RampOff.Enabled", 15=".RampOn.Time", 16=".RampOff.Time", 17=".BlinkEnabled", 18=".Blink", 19=".OnOverride", 20= ".UseBriDefaults"
 
 function SetBwmTrigger(Dp, OldDp, gruppe) {
     if (logging) log("Reaching SetBwmTrigger(Dp, OldDp)=" + Dp + " " + OldDp + " gruppe=" + gruppe);
@@ -686,6 +691,14 @@ function SetBwmTrigger(Dp, OldDp, gruppe) {
     });
 }
 
+function SummarizeBwms(){
+
+}
+
+function AotoOn_Lux(){
+    
+}
+
 function CreateTrigger() {
     on(LuxSensor, function (dp) { //Bei Statusänderung Luxaussensensor
         ActualLux = dp.state.val;
@@ -693,7 +706,7 @@ function CreateTrigger() {
 
     //Gruppen
     // 0=".Power", 1=".Bri",2= ".Ct",3= ".Color", 4=".AutoOffTime", 5=".AutoOff", 6=".NoAutoOffWhenMotion", 7=".MotionDp", 8=".AutoOn", 9=".AutoOnLux", 10=".LuxDp", 11=".AdaptiveBri", 12=".AdaptiveCt",
-    // 13=".RampOn", 14=".RampOff", 15=".RampOnTime", 16=".RampOffTime", 17=".BlinkEnabled", 18=".Blink", 19=".OnOverride", 20= ".UseBriDefaults"
+    // 13=".RampOn.Enabled", 14=".RampOff.Enabled", 15=".RampOn.Time", 16=".RampOff.Time", 17=".BlinkEnabled", 18=".Blink", 19=".OnOverride", 20= ".UseBriDefaults"
     for (let x = 0; x < Groups.length; x++) {
         on({ id: praefix + "." + x + ".Power", change: "ne" }, function (dp) { //Bei Statusänderung Power
             if (logging) log("Group " + x + " Power triggered")
@@ -725,25 +738,25 @@ function CreateTrigger() {
             Groups[x][3] = dp.state.val;
             DoColor(x, dp.state.val);
         });
-        on(praefix + "." + x + ".AutoOffTime", function (dp) { //Bei Statusänderung 
+        on(praefix + "." + x + ".AutoOff_Timed.AutoOffTime", function (dp) { //Bei Statusänderung 
             Groups[x][4] = dp.state.val;
         });
-        on(praefix + "." + x + ".AutoOff", function (dp) { //Bei Statusänderung
+        on(praefix + "." + x + ".AutoOff_Timed.Enabled", function (dp) { //Bei Statusänderung
             Groups[x][5] = dp.state.val;
         });
         // 0=".Power", 1=".Bri",2= ".Ct",3= ".Color", 4=".AutoOffTime", 5=".AutoOff", 6=".NoAutoOffWhenMotion", 7=".MotionDp", 8=".AutoOn", 9=".AutoOnLux", 10=".LuxDp", 11=".AdaptiveBri", 12=".AdaptiveCt",
-        // 13=".RampOn", 14=".RampOff", 15=".RampOnTime", 16=".RampOffTime", 17=".BlinkEnabled", 18=".Blink", 19=".OnOverride", 20= ".UseBriDefaults", 21=".AutoOnBri", 22=".AutoOnColor"
-
-        on(praefix + "." + x + ".NoAutoOffWhenMotion", function (dp) { //Bei Statusänderung
+        // 13=".RampOn.Enabled", 14=".RampOff.Enabled", 15=".RampOn.Time", 16=".RampOff.Time", 17=".BlinkEnabled", 18=".Blink", 19=".OnOverride", 20= ".UseBriDefaults", 21=".AutoOnBri", 22=".AutoOnColor",
+        // 23=".IsMotion", 24=".AutoOn_Lux.Enabled", 25=".AutoOn_Lux.MinLux"
+        on(praefix + "." + x + ".AutoOff_Timed.NoAutoOffWhenMotion", function (dp) { //Bei Statusänderung
             Groups[x][6] = dp.state.val;
         });
-        on(praefix + "." + x + ".MotionDp", function (dp) { //Bei Statusänderung
+        on(praefix + "." + x + ".MotionSensors.Sensor0", function (dp) { //Bei Statusänderung
             Groups[x][7] = dp.state.val;
         });
-        on(praefix + "." + x + ".AutoOn", function (dp) { //Bei Statusänderung
+        on(praefix + "." + x + ".AutoOn_Motion.Enabled", function (dp) { //Bei Statusänderung
             Groups[x][8] = dp.state.val;
         });
-        on(praefix + "." + x + ".AutoOnLux", function (dp) { //Bei Statusänderung
+        on(praefix + "." + x + ".AutoOn_Motion.MaxLux", function (dp) { //Bei Statusänderung
             Groups[x][9] = dp.state.val;
         });
         on(praefix + "." + x + ".LuxDp", function (dp) { //Bei Statusänderung
@@ -755,16 +768,16 @@ function CreateTrigger() {
         on(praefix + "." + x + ".AdaptiveCt", function (dp) { //Bei Statusänderung
             Groups[x][12] = dp.state.val;
         });
-        on(praefix + "." + x + ".RampOn", function (dp) { //Bei Statusänderung
+        on(praefix + "." + x + ".RampOn.Enabled", function (dp) { //Bei Statusänderung
             Groups[x][13] = dp.state.val;
         });
-        on(praefix + "." + x + ".RampOff", function (dp) { //Bei Statusänderung
+        on(praefix + "." + x + ".RampOff.Enabled", function (dp) { //Bei Statusänderung
             Groups[x][14] = dp.state.val;
         });
-        on(praefix + "." + x + ".RampOnTime", function (dp) { //Bei Statusänderung
+        on(praefix + "." + x + ".RampOn.Time", function (dp) { //Bei Statusänderung
             Groups[x][15] = dp.state.val;
         });
-        on(praefix + "." + x + ".RampOffTime", function (dp) { //Bei Statusänderung
+        on(praefix + "." + x + ".RampOff.Time", function (dp) { //Bei Statusänderung
             Groups[x][16] = dp.state.val;
         });
         on(praefix + "." + x + ".BlinkEnabled", function (dp) { //Bei Statusänderung
@@ -788,11 +801,20 @@ function CreateTrigger() {
         on(praefix + "." + x + ".UseBriDefaults", function (dp) { //Bei Statusänderung
             Groups[x][20] = dp.state.val;
         });
-        on(praefix + "." + x + ".AutoOnBri", function (dp) { //Bei Statusänderung
-            Groups[x][20] = dp.state.val;
+        on(praefix + "." + x + ".AutoOn_Motion.AutoOnBri", function (dp) { //Bei Statusänderung
+            Groups[x][21] = dp.state.val;
         });
-        on(praefix + "." + x + ".AutoOnColor", function (dp) { //Bei Statusänderung
-            Groups[x][20] = dp.state.val;
+        on(praefix + "." + x + ".AutoOn_Motion.AutoOnColor", function (dp) { //Bei Statusänderung
+            Groups[x][22] = dp.state.val;
+        });
+        on(praefix + "." + x + ".IsMotion", function (dp) { //Bei Statusänderung
+            Groups[x][23] = dp.state.val;
+        });
+        on(praefix + "." + x + ".AutoOn_Lux.Enabled", function (dp) { //Bei Statusänderung
+            Groups[x][24] = dp.state.val;
+        });
+        on(praefix + "." + x + ".AutoOn_Lux.MinLux", function (dp) { //Bei Statusänderung
+            Groups[x][25] = dp.state.val;
         });
 
         if (typeof Groups[x][7] != "undefined" && Groups[x][7] != "") { //Wenn ein Bwm eingetragen wurde
