@@ -6,9 +6,12 @@ Lichtsteuerung für Leuchtmittel unterschiedlicher Hersteller
 * Gruppierung beliebig vieler Lampen/Leuchtmittel
 * Verwendung gemischter Lampen/Farbsystemen und Umrechnung der Farbsysteme (Hex,Rgb,Hsl,Xy)
 * Möglichkeit der Zuweisung von defaultwerten zu jedem Leuchtmittel (gleiche Helligkeit trotz unterschiedlich leistungsstarker Leuchtmittel)
+* Verwendung beliebig vieler Bewegungsmelder pro Gruppe
 * Ramping (langsame Änderung der Helligkeit bis Zielwert) für on und off
-* AutoOff nach Zeit / Kein off bei Bewegung 
-* AutoOn bei Bewegung
+* AutoOff nach Zeit / Kein Off bei Bewegung 
+* AutoOn bei Bewegung ab bestimmter Helligkeit 
+* AutoOn bei Dunkelheit
+* AutoOn bei Anwesenheitszählererhöhung ab bestimmter Helligkeit (Begrüßungslicht bei heimkommen)
 * Override on (Putzlicht)
 * Adaptive Helligkeit (Bei Aussenhelligkeit über 1000 Lux volle Helligkeit (100%), darunter linear dunkler bis 0 Lux (2%))
 * Adaptive Farbtemperatur (Tags Tageslichtweiss, abends warmweiss)
@@ -16,7 +19,7 @@ Lichtsteuerung für Leuchtmittel unterschiedlicher Hersteller
 
 ## Installation
 Nachdem ihr das Skript in ein neues Js Projekt kopiert habt, müßt ihr dem Skript Eure Leuchtmittel bekannt machen, es wird mindestens ein Schaltdatenpunkt (an/aus) erwartet. D.h. ihr könnt hier auch Steckdosen schalten mit herkömmlichen, nicht smarten, Leuchtmitteln, bzw. auch Geräte die keine Lampen sind.
-Optional könnt ihr Datenpunkte für Helligkeit, Farbe, Farbtemperatur und Farb/Weiss Modus umschaltung angeben. Zu den jeweiligen Einträgen gehören dann noch folgende Zusatzangaben , die jweiligen min/max Werte des Datenpunktes, sowie die gewünschten Defaultwerte, nachfolgend das ganze im Detail:
+Optional könnt ihr Datenpunkte für Helligkeit, Farbe, Farbtemperatur und Farb/Weiss Modus umschaltung angeben. Zu den jeweiligen Einträgen gehören dann noch folgende Zusatzangaben: die jeweiligen min/max Werte des Datenpunktes, sowie die gewünschten Defaultwerte, nachfolgend das ganze im Detail:
 
 Als erstes gebt Ihr den gewünschten Gruppen Namen im entsprechenden Array an, hier wies bei mir aussieht:
 
