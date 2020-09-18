@@ -30,9 +30,12 @@ Diese Gruppen werden, mit 0 beginnend, nun durchgezählt und jede Gruppe bekommt
     LightGroups[0] = [];     //Gruppe 0 = Flur Eg   
     LightGroups[0][0] = []; //Gruppe 0 Device 0 = Strahler1   
 
-    LightGroups[0][0][0] = ["deconz.0.Lights.680ae2fffe0ca671.on", true, false]; // 0=Datenpunkt für Power - Wert für an, Wert für aus (dürfte in den meisten Fällen true/false sein)   
-    LightGroups[0][0][1] = ["deconz.0.Lights.680ae2fffe0ca671.level", 0, 100, 30]; //1=Datenpunkt für Helligkeit - min.Wert - max.Wert - Defaultwert   
-    LightGroups[0][0][2] = ["deconz.0.Lights.680ae2fffe0ca671.ct", 250, 454];*** // 2=Datenpunkt für Farbtemperatur - min.Wert - max.Wert 
+    LightGroups[0][0][0] = ["DeviceDp", true, false]; // 0=Datenpunkt für Power - Wert für an, Wert für aus (dürfte in den meisten Fällen true/false sein)   
+    LightGroups[0][0][1] = ["DeviceDp", 0, 100, 30]; //1=Datenpunkt für Helligkeit - min.Wert - max.Wert - Defaultwert   
+    LightGroups[0][0][2] = ["DeviceDp", 250, 454];*** // 2=Datenpunkt für Farbtemperatur - min.Wert - max.Wert 
+    LightGroups[0][0][3] = ["DeviceDp", 250, 454];*** // 3=Datenpunkt für Farbe - min.Wert - max.Wert 
+    LightGroups[0][0][4] = ["DeviceDp", 250, 454];*** // 4=Datenpunkt für Farbumschaltung - min.Wert - max.Wert 
+
 
 Info: Die min. und max. Werte, werden benötigt da es sehr viele verschiedene Varianten für Helligkeit, ct, Farbe gibt. Bei den einen gehts von 0-100, bei anderen von 0-255 und bei wieder andere gehe z.B. von 250-454. Um das unter einen Hut zu kriegen wandelt das Skript den sich jeweils ergebenden Wertebereich bei Helligkeit und ct in einen Prozentwert um. Bei Farbwerten wird intern mit RGB gearbeitet, dieser Wert wird dann zum Zielsystem konvertiert.
 
