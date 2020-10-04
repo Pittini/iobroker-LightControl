@@ -1,4 +1,4 @@
-# iobroker-LightControl - ALPHAVERSION
+# iobroker-LightControl - BETAVERSION
 Lichtsteuerung für Leuchtmittel unterschiedlicher Hersteller
 
 
@@ -41,6 +41,8 @@ Info: Die min. und max. Werte, werden benötigt da es sehr viele verschiedene Va
 
 
 ## Changelog
+### V0.0.3 (03.10.2020)
+* Fix: AutoOn_Motion Problem mit Bwms behoben.
 ### V0.0.2 (12.09.2020)
 * Change: Datenpunktstruktur und -benamung geändert und neue hinzugefügt.
 ### V0.0.1 (19.08.2020)
