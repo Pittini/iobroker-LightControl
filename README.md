@@ -41,6 +41,9 @@ Info: Die min. und max. Werte, werden benötigt da es sehr viele verschiedene Va
 
 
 ## Changelog
+### V0.1.1 (06.10.2020)
+* Add: Neue Funktionen integriert, jetzt setzen von Helligkeit und Farbe für alle AutoOn Funktionen unabhängig der Gruppensettings einstellbar.
+* Change: Von Alpha nach Beta.
 ### V0.0.3 (03.10.2020)
 * Fix: AutoOn_Motion Problem mit Bwms behoben.
 ### V0.0.2 (12.09.2020)
