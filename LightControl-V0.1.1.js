@@ -8,7 +8,7 @@ const PresenceCountDp = "radar2.0._nHere"; // Datenpunkt für Anwesenheitszähle
 const logging = true; // Logging an/aus
 
 
-const Groups = [["Flur Eg"], ["Wohnzimmer"], ["Toilette"], ["Flur Og"], ["Bad"], ["Dach"], ["Schlafzimmer Carlo"], ["Kueche Unterbau"], ["Küchenvorraum"], ["Hauseingang"]]; //Initialisiert das Gruppenarray mit den Gruppennamen. In folge werden hier alle Gruppenstates eingelesen
+const Groups = [["Flur Eg"], ["Wohnzimmer"], ["Toilette"], ["Flur Og"], ["Bad"], ["Dach"], ["Schlafzimmer Carlo"], ["Kueche Unterbau"], ["Vitrine"], ["Hauseingang"]]; //Initialisiert das Gruppenarray mit den Gruppennamen. In folge werden hier alle Gruppenstates eingelesen
 const LightGroups = []; // Array mit den Daten der Device Datenpunkte
 
 //Jede Lightgroup hat x Devices. Jedes Device hat max. 4 Sätze von Dps für 0=an/aus, 1=Helligkeit, 2=Farbtemperatur, 3=Farbe, 4=Umschaltung color/weiss
@@ -18,25 +18,25 @@ const LightGroups = []; // Array mit den Daten der Device Datenpunkte
 LightGroups[0] = [];//Gruppe Flur Eg
 LightGroups[0][0] = []; // Strahler1
 LightGroups[0][0][0] = ["zigbee.0.ec1bbdfffe32de48.state", true, false];
-LightGroups[0][0][1] = ["zigbee.0.ec1bbdfffe32de48.brightness", 0, 100, 30]; //  Id für Helligkeit - min. Wert - max. Wert - default Wert
+LightGroups[0][0][1] = ["zigbee.0.ec1bbdfffe32de48.brightness", 0, 100, 100]; //  Id für Helligkeit - min. Wert - max. Wert - default Wert
 LightGroups[0][0][2] = ["zigbee.0.ec1bbdfffe32de48.colortemp", 250, 454]; //  Id für Farbtemperatur - min. Wert - max. Wert - default Wert
 
 LightGroups[0][1] = [];  // Strahler2
 LightGroups[0][1][0] = ["zigbee.0.680ae2fffe0ca671.state", true, false];
-LightGroups[0][1][1] = ["zigbee.0.680ae2fffe0ca671.brightness", 0, 100, 5];
+LightGroups[0][1][1] = ["zigbee.0.680ae2fffe0ca671.brightness", 0, 100, 10];
 LightGroups[0][1][2] = ["zigbee.0.680ae2fffe0ca671.colortemp", 250, 454];
 
 LightGroups[0][2] = [];  // Deckenlicht bei Küche/Heizung
 LightGroups[0][2][0] = ["yeelight-2.0.color-0x0000000007e3cadb.control.power", true, false];
-LightGroups[0][2][1] = ["yeelight-2.0.color-0x0000000007e3cadb.control.active_bright", 0, 100, 50];
+LightGroups[0][2][1] = ["yeelight-2.0.color-0x0000000007e3cadb.control.active_bright", 0, 100, 100];
 LightGroups[0][2][2] = ["yeelight-2.0.color-0x0000000007e3cadb.control.ct", 6500, 2700];
 LightGroups[0][2][3] = ["yeelight-2.0.color-0x0000000007e3cadb.control.rgb", "hex", "#FFFFFF"];
 LightGroups[0][2][4] = ["yeelight-2.0.color-0x0000000007e3cadb.control.color_mode", true, false];
-LightGroups[0][2][4] = ["yeelight-2.0.color-0x0000000007e3cadb.control.sat", 0, 100, 100];
+LightGroups[0][2][5] = ["yeelight-2.0.color-0x0000000007e3cadb.control.sat", 0, 100, 100];
 
 LightGroups[0][3] = []; //Strahler Toillettenvorraum
 LightGroups[0][3][0] = ["yeelight-2.0.White1.control.power", true, false];
-LightGroups[0][3][1] = ["yeelight-2.0.White1.control.active_bright", 0, 100, 5];
+LightGroups[0][3][1] = ["yeelight-2.0.White1.control.active_bright", 0, 100, 100];
 LightGroups[0][3][2] = ["yeelight-2.0.White1.control.ct", 6500, 2700];
 
 
@@ -55,7 +55,7 @@ LightGroups[1][3][0] = ["sonoff.0.Sonoff21.POWER", true, false];
 
 LightGroups[1][4] = [];  //Led Strip am TV
 LightGroups[1][4][0] = ["yeelight-2.0.Strip1.control.power", true, false];
-LightGroups[1][4][1] = ["yeelight-2.0.Strip1.control.active_bright", 0, 100, 80];
+LightGroups[1][4][1] = ["yeelight-2.0.Strip1.control.active_bright", 0, 100, 100];
 LightGroups[1][4][2] = ["yeelight-2.0.Strip1.control.ct", 6500, 2700];
 LightGroups[1][4][3] = ["yeelight-2.0.Strip1.control.rgb", "hex", "FF0000"];
 LightGroups[1][4][4] = ["yeelight-2.0.Strip1.control.color_mode", true, false];
@@ -63,89 +63,88 @@ LightGroups[1][4][4] = ["yeelight-2.0.Strip1.control.color_mode", true, false];
 
 LightGroups[1][5] = []; //Kugellampe
 LightGroups[1][5][0] = ["zigbee.0.ccccccfffed68f5d.state", true, false];
-LightGroups[1][5][1] = ["zigbee.0.ccccccfffed68f5d.brightness", 0, 100, 25];
+LightGroups[1][5][1] = ["zigbee.0.ccccccfffed68f5d.brightness", 0, 100, 60];
 
-LightGroups[1][5][3] = ["zigbee.0.ccccccfffed68f5d.color", "hex", "FF0000", "#FFFFFF", "#FFFFFF"]; // Datenpunkt - Farbsystem - Standardfarbe(aktuell rot) - Farbe für warmweiss - Farbe für Tageslichtweiss 
+LightGroups[1][5][3] = ["zigbee.0.ccccccfffed68f5d.color", "hex", "#FF0000", "#FFA500", "#FFE4B5"]; // Datenpunkt - Farbsystem - Standardfarbe(aktuell rot) - Farbe für warmweiss - Farbe für Tageslichtweiss 
 
 LightGroups[1][6] = []; //Strahler
 LightGroups[1][6][0] = ["zigbee.0.680ae2fffeae5254.state", true, false];
 LightGroups[1][6][1] = ["zigbee.0.680ae2fffeae5254.brightness", 0, 100, 100];
 
-LightGroups[1][6][3] = ["zigbee.0.680ae2fffeae5254.color", "hex", "#FF0000", "#FFFFFF", "#FFFFFF"];  // Datenpunkt - Farbsystem - Standardfarbe(aktuell rot) - Farbe für warmweiss - Farbe für Tageslichtweiss 
+LightGroups[1][6][3] = ["zigbee.0.680ae2fffeae5254.color", "hex", "#FF0000", "#FFA500", "#FFE4B5"];  // Datenpunkt - Farbsystem - Standardfarbe(aktuell rot) - Farbe für warmweiss - Farbe für Tageslichtweiss 
 
 
 LightGroups[2] = []; //Gruppe Klo
 LightGroups[2][0] = []; //Deckenlampe
 LightGroups[2][0][0] = ["zigbee.0.680ae2fffef92c4e.state", true, false];
-LightGroups[2][0][1] = ["zigbee.0.680ae2fffef92c4e.brightness", 0, 100, 10];
+LightGroups[2][0][1] = ["zigbee.0.680ae2fffef92c4e.brightness", 0, 100, 100];
 LightGroups[2][0][2] = ["zigbee.0.680ae2fffef92c4e.colortemp", 250, 454];
 
 
 LightGroups[3] = [];//Gruppe Flur Og
 LightGroups[3][0] = []; //Strahlergruppe Colorteil
 LightGroups[3][0][0] = ["zigbee.0.ccccccfffed4ee4c.state", true, false]; // Datenpunkt - an Wert - aus Wert
-LightGroups[3][0][1] = ["zigbee.0.ccccccfffed4ee4c.brightness", 0, 100, 30]; // Datenpunkt - min. Wert - max. Wert - Defaultwert
+LightGroups[3][0][1] = ["zigbee.0.ccccccfffed4ee4c.brightness", 0, 100, 100]; // Datenpunkt - min. Wert - max. Wert - Defaultwert
 //LightGroups[3][0][2] = ["deconz.0.Lights.ccccccfffed4ee4c.ct", 250, 454]; // Datenpunkt - min. Wert - max. Wert - Defaultwert
-LightGroups[3][0][3] = ["zigbee.0.ccccccfffed4ee4c.color", "hex", "#FFA500", "#FFA500", "#FFFFFF"]; // Datenpunkt - Farbsystem - Standardfarbe(aktuell Warmweiss) - Farbe für warmweiss - Farbe für Tageslichtweiss 
+LightGroups[3][0][3] = ["zigbee.0.ccccccfffed4ee4c.color", "hex", "#FFA500", "#FFA500", "#FFE4B5"]; // Datenpunkt - Farbsystem - Standardfarbe(aktuell Warmweiss) - Farbe für warmweiss - Farbe für Tageslichtweiss 
 
 LightGroups[3][1] = []; //Strahlergruppe Teil1
 LightGroups[3][1][0] = ["zigbee.0.588e81fffe0ffd7a.state", true, false];
-LightGroups[3][1][1] = ["zigbee.0.588e81fffe0ffd7a.brightness", 0, 100, 30];
+LightGroups[3][1][1] = ["zigbee.0.588e81fffe0ffd7a.brightness", 0, 100, 100];
 LightGroups[3][1][2] = ["zigbee.0.588e81fffe0ffd7a.colortemp", 250, 454];
 
 LightGroups[3][2] = []; //Strahlergruppe Teil3
 LightGroups[3][2][0] = ["zigbee.0.ec1bbdfffe6fc795.state", true, false];
-LightGroups[3][2][1] = ["zigbee.0.ec1bbdfffe6fc795.brightness", 0, 100, 30];
+LightGroups[3][2][1] = ["zigbee.0.ec1bbdfffe6fc795.brightness", 0, 100, 100];
 LightGroups[3][2][2] = ["zigbee.0.ec1bbdfffe6fc795.colortemp", 250, 454];
 
 LightGroups[4] = [];//Gruppe Bad
 LightGroups[4][0] = []; //Deckenleuchte
 LightGroups[4][0][0] = ["zigbee.0.588e81fffeae2ae0.state", true, false];
-LightGroups[4][0][1] = ["zigbee.0.588e81fffeae2ae0.brightness", 0, 100, 25];
+LightGroups[4][0][1] = ["zigbee.0.588e81fffeae2ae0.brightness", 0, 100, 100];
 LightGroups[4][0][2] = ["zigbee.0.588e81fffeae2ae0.colortemp", 250, 454];
 
 LightGroups[5] = [];//Gruppe Dach
 LightGroups[5][0] = []; //Klemmstrahler Dachflur
 LightGroups[5][0][0] = ["zigbee.0.680ae2fffeaddb07.state", true, false];
-LightGroups[5][0][1] = ["zigbee.0.680ae2fffeaddb07.brightness", 0, 100, 25];
+LightGroups[5][0][1] = ["zigbee.0.680ae2fffeaddb07.brightness", 0, 100, 100];
 LightGroups[5][0][2] = ["zigbee.0.680ae2fffeaddb07.colortemp", 250, 454];
 
 LightGroups[5][1] = []; //Klemmstrahler Dachtreppe
 LightGroups[5][1][0] = ["zigbee.0.588e81fffe409146.state", true, false];
-LightGroups[5][1][1] = ["zigbee.0.588e81fffe409146.brightness", 0, 100, 40];
+LightGroups[5][1][1] = ["zigbee.0.588e81fffe409146.brightness", 0, 100, 100];
 LightGroups[5][1][2] = ["zigbee.0.588e81fffe409146.colortemp", 250, 454];
 
 LightGroups[6] = [];//Gruppe Schlafzimmer Carlo
 LightGroups[6][0] = []; //Nachttischlampe Carlo
 LightGroups[6][0][0] = ["zigbee.0.680ae2fffec81608.state", true, false];
-LightGroups[6][0][1] = ["zigbee.0.680ae2fffec81608.brightness", 0, 100, 40];
+LightGroups[6][0][1] = ["zigbee.0.680ae2fffec81608.brightness", 0, 100, 80];
 LightGroups[6][0][2] = ["zigbee.0.680ae2fffec81608.colortemp", 250, 454];
 
 LightGroups[6][1] = []; //Nachtischlampe 2 (gold)
 LightGroups[6][1][0] = ["zigbee.0.ccccccfffea91336.state", true, false];
-LightGroups[6][1][1] = ["zigbee.0.ccccccfffea91336.brightness", 0, 100, 50];
+LightGroups[6][1][1] = ["zigbee.0.ccccccfffea91336.brightness", 0, 100, 100];
 
 LightGroups[7] = [];//Gruppe Küche
 LightGroups[7][0] = []; //Unterbau Leds
 LightGroups[7][0][0] = ["zigbee.0.d0cf5efffebe553c.state", true, false];
 LightGroups[7][0][1] = ["zigbee.0.d0cf5efffebe553c.brightness", 0, 100, 100];
 
-LightGroups[8] = [];//Gruppe Küchenvorraum
+LightGroups[8] = [];//Gruppe Vitrine
 LightGroups[8][0] = [];  // Deckenlicht bei Küche/Heizung
-LightGroups[8][0][0] = ["yeelight-2.0.color-0x0000000007e3cadb.control.power", true, false];
-LightGroups[8][0][1] = ["yeelight-2.0.color-0x0000000007e3cadb.control.active_bright", 0, 100, 2];
-LightGroups[8][0][2] = ["yeelight-2.0.color-0x0000000007e3cadb.control.ct", 6500, 2700];
-LightGroups[8][0][3] = ["yeelight-2.0.color-0x0000000007e3cadb.control.rgb", "hex", "#FF0000"];
-LightGroups[8][0][4] = ["yeelight-2.0.color-0x0000000007e3cadb.control.color_mode", true, false];
+LightGroups[8][0][0] = ["zigbee.0.680ae2fffeaded15.state", true, false];
+LightGroups[8][0][1] = ["zigbee.0.680ae2fffeaded15.brightness", 0, 100, 100];
+LightGroups[8][0][2] = ["zigbee.0.680ae2fffeaded15.colortemp", 250, 454];
 
 LightGroups[9] = [];//Gruppe Hauseingangsbeleuchtung
 LightGroups[9][0] = []; //Lampe Haustür
-LightGroups[9][0][0] = ["yeelight-2.0.White1.control.power", true, false];
-LightGroups[9][0][1] = ["yeelight-2.0.White1.control.active_bright", 0, 100, 100];
-LightGroups[9][0][2] = ["yeelight-2.0.White1.control.ct", 6500, 2700];
+LightGroups[9][0][0] = ["yeelight-2.0.White2.control.power", true, false];
+LightGroups[9][0][1] = ["yeelight-2.0.White2.control.active_bright", 0, 100, 100];
+LightGroups[9][0][2] = ["yeelight-2.0.White2.control.ct", 6500, 2700];
 
 //Ab hier nix mehr ändern
 let DpCount = 0; //Zähler
+let Counter = 0; //Zähler
 const States = []; //Array mit anzulegenden Dps
 let IsLuxEvening = false;
 let IsTimeSlotActive = false; //Timeslot für Lux Autoauslösung
@@ -264,14 +263,14 @@ States.forEach(function (state) {
             if (logging) log("CreateStates fertig!");
             for (let x = 0; x < Groups.length; x++) { //Channels erstellen
                 setObject(praefix + "." + x, { type: 'channel', common: { name: Groups[x][0] }, native: {} });
-                setObject(praefix + "." + x + ".AutoOff_Timed", { type: 'channel', common: { name: Groups[x] + " - " +"Zeitgesteuertes ausschalten" }, native: {} });
-                setObject(praefix + "." + x + ".AutoOn_Motion", { type: 'channel', common: { name: Groups[x] + " - " +"Bewegungsgesteuertes anschalten" }, native: {} });
-                setObject(praefix + "." + x + ".MotionSensors", { type: 'channel', common: { name: Groups[x] + " - " +"Bewegungsmelder der Gruppe" }, native: {} });
-                setObject(praefix + "." + x + ".RampOn", { type: 'channel', common: { name: Groups[x] + " - " +"Langsames hochdimmen bei anschalten" }, native: {} });
-                setObject(praefix + "." + x + ".RampOff", { type: 'channel', common: { name: Groups[x] + " - " +"Langsames runterdimmen bei ausschalten" }, native: {} });
-                setObject(praefix + "." + x + ".AutoOn_Lux", { type: 'channel', common: { name: Groups[x] + " - " +"Helligkeitsgesteuertes anschalten" }, native: {} });
-                setObject(praefix + "." + x + ".AutoOn_PresenceIncrease", { type: 'channel', common: { name: Groups[x] + " - " +"Anwesenheitsgesteuertes anschalten" }, native: {} });
-                setObject(praefix + "." + x + ".Blink", { type: 'channel', common: { name: Groups[x] + " - " +"Blinken" }, native: {} });
+                setObject(praefix + "." + x + ".AutoOff_Timed", { type: 'channel', common: { name: Groups[x] + " - " + "Zeitgesteuertes ausschalten" }, native: {} });
+                setObject(praefix + "." + x + ".AutoOn_Motion", { type: 'channel', common: { name: Groups[x] + " - " + "Bewegungsgesteuertes anschalten" }, native: {} });
+                setObject(praefix + "." + x + ".MotionSensors", { type: 'channel', common: { name: Groups[x] + " - " + "Bewegungsmelder der Gruppe" }, native: {} });
+                setObject(praefix + "." + x + ".RampOn", { type: 'channel', common: { name: Groups[x] + " - " + "Langsames hochdimmen bei anschalten" }, native: {} });
+                setObject(praefix + "." + x + ".RampOff", { type: 'channel', common: { name: Groups[x] + " - " + "Langsames runterdimmen bei ausschalten" }, native: {} });
+                setObject(praefix + "." + x + ".AutoOn_Lux", { type: 'channel', common: { name: Groups[x] + " - " + "Helligkeitsgesteuertes anschalten" }, native: {} });
+                setObject(praefix + "." + x + ".AutoOn_PresenceIncrease", { type: 'channel', common: { name: Groups[x] + " - " + "Anwesenheitsgesteuertes anschalten" }, native: {} });
+                setObject(praefix + "." + x + ".Blink", { type: 'channel', common: { name: Groups[x] + " - " + "Blinken" }, native: {} });
             };
             main();
         };
@@ -292,7 +291,7 @@ function Init() {
         OldPowerState[x] = [];
         z = 0;
         Groups[x][50] = Groups[x][0]; //Den zum initialisieren genutzten Namen von Index 0 auf 50 kopieren um 0 wieder frei zu haben für die Loop
-        Groups[x][51] = false; // AutoOn_Lux-stateLock
+        //Groups[x][51] = false; // AutoOn_Lux-stateLock
         for (let y = 0; y < Dps.length; y++) {
 
             if (y == 7) {
@@ -363,8 +362,21 @@ function SetAutoOff(gruppe) { //Schaltet Gruppe nach pro Gruppe vorgegbenenr Zei
             log("Starting Timeoutloop Groups[gruppe][7] =" + Groups[gruppe][7] + " Groups[gruppe][6]=" + Groups[gruppe][6] + " IsMotion[gruppe]=" + Groups[gruppe][23]);
 
             if (Groups[gruppe][6] && !Groups[gruppe][23]) { //AutoOff ausführen wenn keine Bewegung und NoAutoOffWhenMotion=true
-                setState(praefix + "." + gruppe + ".Power", false);
-                if (logging) log("Group " + gruppe + " autom. deactivated");
+
+                Groups[gruppe][0] = false;
+                for (let x = 0; x < LightGroups[gruppe].length; x++) {
+                    setState(LightGroups[gruppe][x][0][0], LightGroups[gruppe][x][0][2]);  //Ausschalten
+                    if (logging) log("Datapoint " + LightGroups[gruppe][x][0][0] + " set to " + LightGroups[gruppe][x][0][2] + " what means, switched off");
+                    if (x == LightGroups[gruppe].length - 1) {
+                        setState(praefix + "." + gruppe + ".Power", false); //Ausschalten
+                        if (logging) log("Group " + gruppe + " autom. deactivated");
+
+                        return true;
+                    };
+                }
+
+
+
             }
             else if (Groups[gruppe][6] && Groups[gruppe][23]) { //AutoOff blocken da Bewegung und Timeout neustarten
                 SetAutoOff(gruppe);
@@ -378,6 +390,8 @@ function SetAutoOff(gruppe) { //Schaltet Gruppe nach pro Gruppe vorgegbenenr Zei
 function DoPower(gruppe, onoff) { // onoff 0=aus, 1=an, 2=Gruppe um 3=Devices um 4=Save 5=restore
     if (logging) log("Reaching DoPower(gruppe, onoff) Gruppe=" + gruppe + " onoff=" + onoff);
 
+
+
     if (onoff == 1 && Groups[gruppe][5]) { //Bei anschalten und wenn AutoOff aktiviert
         if (logging) log("DoPower detected AutoOff=" + Groups[gruppe][5]);
         SetAutoOff(gruppe);
@@ -385,32 +399,44 @@ function DoPower(gruppe, onoff) { // onoff 0=aus, 1=an, 2=Gruppe um 3=Devices um
 
     if (onoff == 1 && Groups[gruppe][13]) { //Bei anschalten und wenn RampOn aktiviert
         if (logging) log("DoPower detected RampOn=" + Groups[gruppe][13]);
-        RampOn(gruppe);
-        return true;
+
+        if (RampOn(gruppe)) {
+            Groups[gruppe][0] = true;
+            setState(praefix + "." + gruppe + ".Power", true); //AnschaltDp setzen
+            return true;
+        };
     };
 
     if (onoff == 0 && Groups[gruppe][14]) { //Bei ausschalten und wenn RampOff aktiviert
         if (logging) log("DoPower detected RampOff=" + Groups[gruppe][14]);
-        RampOff(gruppe);
-        return true;
+        if (RampOff(gruppe)) return true;
     };
 
     if (onoff == 0) { // Gruppe ausschalten
-        for (let x = 0; x < LightGroups[gruppe].length; x++) {
-            setState(LightGroups[gruppe][x][0][0], LightGroups[gruppe][x][0][2]);  //Ausschalten
-            if (logging) log("Datapoint " + LightGroups[gruppe][x][0][0] + " set to " + LightGroups[gruppe][x][0][2] + " what means, switched off");
-            if (x == LightGroups[gruppe].length - 1) {
-                return true;
-            };
+        if (DoBri(gruppe, 2)) { //Erst runterdimmen um Einschaltblitzer zu vermeiden
+            Groups[gruppe][0] = false;
+            for (let x = 0; x < LightGroups[gruppe].length; x++) {
+                setState(LightGroups[gruppe][x][0][0], LightGroups[gruppe][x][0][2]);  //Ausschalten
+                if (logging) log("Datapoint " + LightGroups[gruppe][x][0][0] + " set to " + LightGroups[gruppe][x][0][2] + " what means, switched off");
+                if (x == LightGroups[gruppe].length - 1) {
+                    setState(praefix + "." + gruppe + ".Power", false); //Ausschalten
+                    return true;
+                };
+            }
+
         }
+
     } else if (onoff == 1) { //Gruppe anschalten
+        Groups[gruppe][0] = true;
         for (let x = 0; x < LightGroups[gruppe].length; x++) {
             setState(LightGroups[gruppe][x][0][0], LightGroups[gruppe][x][0][1]); //Anschalten
             if (logging) log("Datapoint " + LightGroups[gruppe][x][0][0] + " set to " + LightGroups[gruppe][x][0][1] + " what means, switched on");
             if (x == LightGroups[gruppe].length - 1) {
+                setState(praefix + "." + gruppe + ".Power", true); //AnschaltDp aktualsieren
                 return true;
             };
-        }
+        };
+
     } else if (onoff == 2) { //Gruppe umschalten
         if (Groups[gruppe][0]) { //Wenn Gruppe an, ausschalten und umgekehrt
             Groups[gruppe][0] = false;
@@ -418,18 +444,22 @@ function DoPower(gruppe, onoff) { // onoff 0=aus, 1=an, 2=Gruppe um 3=Devices um
                 setState(LightGroups[gruppe][x][0][0], LightGroups[gruppe][x][0][2]);  //Ausschalten
                 if (logging) log("Group " + Groups[gruppe][50] + " Datapoint " + LightGroups[gruppe][x][0][0] + " toggled to " + LightGroups[gruppe][x][0][2] + " what means, switched off");
                 if (x == LightGroups[gruppe].length - 1) {
+                    setState(praefix + "." + gruppe + ".Power", false); //Ausschalten
                     return true;
                 };
-            }
+            };
+
         } else {
             Groups[gruppe][0] = true;
             for (let x = 0; x < LightGroups[gruppe].length; x++) {
                 setState(LightGroups[gruppe][x][0][0], LightGroups[gruppe][x][0][1]); //Anschalten
                 if (logging) log("Group " + Groups[gruppe][50] + " Datapoint " + LightGroups[gruppe][x][0][0] + " toggled to " + LightGroups[gruppe][x][0][1] + " what means, switched on");
                 if (x == LightGroups[gruppe].length - 1) {
+                    setState(praefix + "." + gruppe + ".Power", true); //Anschalten
                     return true;
                 };
-            }
+            };
+
         };
     } else if (onoff == 3) { //Devices der Gruppe umschalten
         //if (getState(LightGroups[gruppe][x][0][0]).val) { //Wenn Device an, ausschalten und umgekehrt
@@ -454,6 +484,10 @@ function DoCt(gruppe, ct) { //Farbtemperatur setzen
         if (logging) log("Color choosen, aborting DoCt()");
         return true;
     };
+    if (!Groups[gruppe][0]) { //Wenn Gruppe farbig, ct unnötig, Abbruch
+        if (logging) log("Group is not active, aborting DoCt()");
+        return true;
+    };
 
     for (let x = 0; x < LightGroups[gruppe].length; x++) {
         if (logging) log("typeof LightGroups[gruppe][x][2]=" + typeof LightGroups[gruppe][x][2]);
@@ -461,16 +495,16 @@ function DoCt(gruppe, ct) { //Farbtemperatur setzen
             let ProzCt = (LightGroups[gruppe][x][2][2] - LightGroups[gruppe][x][2][1]) / 100 // =1% als Wert
             let TempVal = Math.abs(parseInt(LightGroups[gruppe][x][2][1] + (ProzCt * ct)));
             if (logging) log("(ProzCt * ct)=" + (ProzCt * ct) + " LightGroups[gruppe][x][2][1]=" + LightGroups[gruppe][x][2][1] + " ProzCt=" + ProzCt + " TempVal=" + TempVal + " typeof LightGroups[gruppe][x][2][0]=" + typeof LightGroups[gruppe][x][2][0])
-            setState(LightGroups[gruppe][x][2][0], TempVal);
+            if (getState(LightGroups[gruppe][x][2][0]).val != TempVal) setStateDelayed(LightGroups[gruppe][x][2][0], TempVal, 100);
         } else if (typeof LightGroups[gruppe][x][2] == "undefined" && typeof LightGroups[gruppe][x][3] !== "undefined") { //Device hat keine ct Funktion, aber color Funktion
-            if (ct >= 70) {
+            if (ct >= 50) {
                 if (typeof LightGroups[gruppe][x][3][3] !== "undefined") {
-                    setStateDelayed(LightGroups[gruppe][x][3][0], LightGroups[gruppe][x][3][3], 100); //Device auf Farbe, entsprechend warmweiss setzen  
+                    if (getState(LightGroups[gruppe][x][3][0]).val != LightGroups[gruppe][x][3][3]) setStateDelayed(LightGroups[gruppe][x][3][0], LightGroups[gruppe][x][3][3], 100); //Device auf Farbe, entsprechend warmweiss setzen  
                     if (logging) log("No ct function, but color function found, setting color to: " + LightGroups[gruppe][x][3][3] + ", what should be warmwhite" + " DeviceDp=" + LightGroups[gruppe][x][3][0])
                 };
             } else {
                 if (typeof LightGroups[gruppe][x][3][4] !== "undefined") {
-                    setStateDelayed(LightGroups[gruppe][x][3][0], LightGroups[gruppe][x][3][4], 100); //Device auf Farbe, entsprechend tagesweiss setzen  
+                    if (getState(LightGroups[gruppe][x][3][0]).val != LightGroups[gruppe][x][3][4]) setStateDelayed(LightGroups[gruppe][x][3][0], LightGroups[gruppe][x][3][4], 100); //Device auf Farbe, entsprechend tagesweiss setzen  
                     if (logging) log("No ct function, but color function found, setting color to: " + LightGroups[gruppe][x][3][4] + ", what should be daywhite" + " DeviceDp=" + LightGroups[gruppe][x][3][0])
                 };
             };
@@ -485,15 +519,22 @@ function DoCt(gruppe, ct) { //Farbtemperatur setzen
 function DoBri(gruppe, bri) { //Helligkeit
     if (logging) log("Reaching DoBri(gruppe, bri gruppe=)" + gruppe + " bri=" + bri)
     let newbri;
+
+    if (!Groups[gruppe][0]) { //Wenn Gruppe farbig, ct unnötig, Abbruch
+        if (logging) log("Group is not active, aborting DoBri()");
+        return true;
+    };
+
     for (let x = 0; x < LightGroups[gruppe].length; x++) { //Alle Devices der Gruppe durchgehen
         if (typeof LightGroups[gruppe][x][1] != "undefined") { //Device hat bri Funktion
             if (!Groups[gruppe][19]) { //BriDefaults des Devices nutzen und mit geforderter Helligkeit verrechnen, jedoch nur wenn kein OnOverride
                 if (logging) log("Calculated Bri=" + (bri * (LightGroups[gruppe][x][1][3] / 100)) + " Incoming Bri=" + bri + " DeviceDefaultBri=" + LightGroups[gruppe][x][1][3])
                 newbri = bri * (LightGroups[gruppe][x][1][3] / 100);
-                setState(LightGroups[gruppe][x][1][0], newbri);
+                if (newbri < 1) newbri = 1;
+                if (getState(LightGroups[gruppe][x][1][0]).val != newbri) setState(LightGroups[gruppe][x][1][0], newbri);
                 if (logging) log("newbri=" + newbri + "% relative Brightness DeviceDp=" + LightGroups[gruppe][x][1][0]);
             } else { //Bei Override 
-                setState(LightGroups[gruppe][x][1][0], bri); //Bri direkt setzen
+                if (getState(LightGroups[gruppe][x][1][0]).val != bri) setState(LightGroups[gruppe][x][1][0], bri); //Bri direkt setzen
                 if (logging) log("bri=" + bri + "% absolute Brightness Lightgroup=" + LightGroups[gruppe][x][1][0]);
 
             };
@@ -509,17 +550,27 @@ function DoColor(gruppe, color) { //Farbe
     let TempColor;
     if (logging) log("incoming color is " + color + " color.substring(0, 1)=" + color.substring(0, 1) + " color.length=" + color.length);
 
+    if (!Groups[gruppe][0]) { //Wenn Gruppe aus, color unnötig, Abbruch
+        if (logging) log("Group is not active, aborting DoColor()");
+        return true;
+    };
+
+
     // Farbsystem von color bestimmen und nach rgb konvertieren
     if (color.substring(0, 1) == "#" && color.length == 7) { //Wenn Hexfarbe wie "#FFFFFF"
         if (logging) log("incoming color is hex " + color.substring(0, 1) + " " + color.length);
         TempColor = ConvertHexToRgb(color);
         //log(TempColor)
     }
-    else if (Object.keys(cssKeywords).indexOf(color.toLowerCase()) != -1) {
+    else if (Object.keys(cssKeywords).indexOf(color.toLowerCase()) != -1) { //Wenn benannte Farbe, diese umwandeln und zurückschreiben damit Vis Widgets darstellen können
         if (logging) log("incoming color is namedcolor ");
         if (logging) log("rgb=" + ConvertKeywordToRgb(color.toLowerCase()));
         TempColor = ConvertKeywordToRgb(color.toLowerCase());
-    }
+        setState(praefix + "." + gruppe + ".Color", "#" + ConvertRgbToHex(TempColor));
+
+        return false;
+    };
+
     color = TempColor; //color ist nun dediziert rgb
     if (logging) log("incoming color simplyfied to rgb=" + color + " now converting this rgb to the targets colorsystem")
 
@@ -552,14 +603,14 @@ function DoColor(gruppe, color) { //Farbe
             if (typeof LightGroups[gruppe][x][4] != "undefined") { //Device hat Farbe/weiss umschaltung
                 if (logging) log("Found Device with colormode switch. DeviceDp=" + LightGroups[gruppe][x][4][0]);
                 if (color.toString() == "255,255,255") { //Farbe weiss gefordert
-                    setStateDelayed(LightGroups[gruppe][x][4][0], LightGroups[gruppe][x][4][2], 0); //Weissmodus aktivieren
+                    setState(LightGroups[gruppe][x][4][0], LightGroups[gruppe][x][4][2]); //Weissmodus aktivieren
                     if (logging) log("switched to whitemode, color=" + color + " colormode=" + LightGroups[gruppe][x][4][2]);
                 } else {
-                    setStateDelayed(LightGroups[gruppe][x][4][0], LightGroups[gruppe][x][4][1], 0); //Farbmodus aktivieren
+                    setState(LightGroups[gruppe][x][4][0], LightGroups[gruppe][x][4][1]); //Farbmodus aktivieren
                     if (logging) log("switched to colormode, color=" + color + " colormode=" + LightGroups[gruppe][x][4][1]);
                 };
             };
-            setStateDelayed(LightGroups[gruppe][x][3][0], TempColor.toString(), 50);
+            setStateDelayed(LightGroups[gruppe][x][3][0], TempColor.toString(), 150);
         };
         if (x == LightGroups[gruppe].length - 1) { //Letzter Durchlauf des Zyklus
             return true;
@@ -589,9 +640,9 @@ function GetAdaptiveCt() { //
     let EpochGoldenHourEnd = getAstroDate("goldenHourEnd").getTime();
 
     if (EpochNow > EpochGoldenHourEnd && EpochNow < EpochGoldenHour) { //Wenn aktuelle Zeit zwischen blauer und goldener Stunde ist (Tag)
-        ct = 20;
+        ct = 10;
     } else {
-        ct = 90;
+        ct = 100;
     };
 
     if (logging) log("Adaptive ct set to " + ct)
@@ -607,9 +658,9 @@ function Blink(gruppe, farbe, MaxBlinks = 1, frequenz = 1000) {
     let counter = 1;
 
     //log("x=" + x + "LightGroups[gruppe][x][0][0]=" + LightGroups[gruppe][x][0][0] + " LightGroups[gruppe][x][0][1]" + LightGroups[gruppe][x][0][1] + " LightGroups[gruppe][x][0][2]" + LightGroups[gruppe][x][0][2])
-    DoPower(gruppe, 2); //Umschalten
+    if (DoPower(gruppe, 2)) DoColor(gruppe, farbe); //Umschalten, dann Farbe setzen
 
-    DoColor(gruppe, farbe)
+
 
     BlinkInterval[gruppe] = setInterval(function () {
         DoPower(gruppe, 2); //Umschalten
@@ -631,10 +682,11 @@ function RampOn(gruppe) {
         TempBri = 2;
         if (typeof LightGroups[gruppe][x][1] != "undefined") { //Eintrag für Helligkeitssteuerung vorhanden
             if (typeof LightGroups[gruppe][x][1][3] != "undefined" && Groups[gruppe][11]) { // Device hat Bri Funktion und AdaptiveBri ist aktiviert
-                setState(LightGroups[gruppe][x][0][0], LightGroups[gruppe][x][0][1]); //Anschalten
-                setState(LightGroups[gruppe][x][1][0], 2); //Helligkeit setzen 
+                if (setState(LightGroups[gruppe][x][0][0], LightGroups[gruppe][x][0][1])) {//Anschalten und nach Erfolg Helligkeit auf 2
+                    setState(LightGroups[gruppe][x][1][0], 2); //Helligkeit setzen 
+                };
 
-                RampInterval[gruppe][x] = setInterval(function () { //
+                RampInterval[gruppe][x] = setInterval(function () { // Intervall starten
                     setState(LightGroups[gruppe][x][1][0], TempBri); //Helligkeit setzen 
                     TempBri += LightGroups[gruppe][x][1][3] / RampSteps;
                     if (TempBri + LightGroups[gruppe][x][1][3] / RampSteps > AdaptiveBri) {
@@ -645,8 +697,10 @@ function RampOn(gruppe) {
                 if (logging) log("Group " + Groups[gruppe][50] + " switched ramped on. Device=" + LightGroups[gruppe][x][1][0] + ", and set brightness adaptive to: " + AdaptiveBri);
             }
             else if (typeof LightGroups[gruppe][x][1][3] != "undefined") { // Device hat Bri Funktion und UseBriDefaults ist aktiviert
-                setState(LightGroups[gruppe][x][1][0], 2); //Helligkeit setzen 
-                setState(LightGroups[gruppe][x][0][0], LightGroups[gruppe][x][0][1]); //Anschalten
+                if (setState(LightGroups[gruppe][x][0][0], LightGroups[gruppe][x][0][1])) {//Anschalten und nach Erfolg Helligkeit auf 2
+                    setState(LightGroups[gruppe][x][1][0], 2); //Helligkeit setzen 
+                };
+
 
                 RampInterval[gruppe][x] = setInterval(function () { //
                     setState(LightGroups[gruppe][x][1][0], TempBri); //Helligkeit setzen 
@@ -654,7 +708,7 @@ function RampOn(gruppe) {
                     //log("TempBri" + TempBri);
 
                     if (TempBri + LightGroups[gruppe][x][1][3] / RampSteps > LightGroups[gruppe][x][1][3]) {
-                        clearInterval(RampInterval[gruppe][x]);
+                        if (typeof RampInterval[gruppe][x] == "object") clearInterval(RampInterval[gruppe][x]);
                     };
                 }, parseInt(Groups[gruppe][15]) * 1000 / RampSteps); //
 
@@ -673,6 +727,7 @@ function RampOn(gruppe) {
             };
         };
         if (x == LightGroups[gruppe].length - 1) { //Letzter Durchlauf des Zyklus
+            Groups[x][0] = true;
             return true;
         };
 
@@ -683,6 +738,7 @@ function RampOff(gruppe) {
     if (logging) log("Reaching RampOff(gruppe)=" + gruppe);
     let TempBri = 0;
     let RampSteps = 20;
+    RampInterval[gruppe] = [];
 
     for (let x = 0; x < LightGroups[gruppe].length; x++) {
         if (typeof LightGroups[gruppe][x][1] != "undefined") { // Device hat Bri Funktion 
@@ -695,7 +751,8 @@ function RampOff(gruppe) {
                 setState(LightGroups[gruppe][x][1][0], TempBri); //Helligkeit setzen 
 
                 if (TempBri - Faktor <= 2) {
-                    clearInterval(RampInterval[gruppe][x]);
+                    log("typeof RampInterval[gruppe][x]=" + typeof RampInterval[gruppe][x])
+                    if (typeof RampInterval[gruppe][x] == "object") clearInterval(RampInterval[gruppe][x]);
                     setState(LightGroups[gruppe][x][0][0], LightGroups[gruppe][x][0][2]);  //Ausschalten
                 };
             }, parseInt(Groups[gruppe][16]) * 1000 / RampSteps); //
@@ -710,6 +767,11 @@ function RampOff(gruppe) {
                 if (logging) log("Outlets switched off at RampStart");
             };
         };
+        if (x == LightGroups[gruppe].length - 1) { //Letzter Durchlauf des Zyklus
+            Groups[x][0] = false;
+            return true;
+        };
+
     };
 }
 
@@ -717,10 +779,14 @@ function RampOff(gruppe) {
 function OnOverride(gruppe, onoff) {
     if (logging) log("Reaching OnOverride(gruppe, onoff) Group=" + gruppe + " onoff=" + onoff);
 
-    if (DoPower(gruppe, onoff) && onoff == 1) { //Erst wenn Durchlauf fertig ist (async Problem vermeiden) und anschaltung
-        if (logging) log("Setting bri after full On cycle");
-        DoBri(gruppe, 100);//Helligkeit 100%
-        DoColor(gruppe, "white"); //Farbe auf weiss
+    if (DoPower(gruppe, onoff)) { //Erst wenn Durchlauf fertig ist (async Problem vermeiden) und anschaltung
+        if (onoff == 1) {
+            if (logging) log("Setting bri after full On cycle");
+            if (DoBri(gruppe, 100)) {//Helligkeit 100%
+                DoColor(gruppe, "white"); //Farbe auf weiss
+            };
+
+        }
     };
 }
 
@@ -754,27 +820,39 @@ function SummarizeBwms(gruppe, value) { //Kombiniert x Bewegungsmelder auf einen
     };
 }
 
-function AutoOn_Motion(gruppe) { //Schaltet Gruppe bei Bewegung an. Nutzt hierfür den normalen Schaltdatenpunkt, um direktes ausschalten via diesen zu ermöglichen.
+function AutoOn_Motion(gruppe) { //Schaltet Gruppe bei Bewegung an. 
     if (logging) log("Reaching AutoOn_Motion(gruppe) Group=" + gruppe);
     let UseLux = ActualLux;
     if (Groups[gruppe][10] != "" && typeof Groups[gruppe][10] != "undefined") { //Wenn Helligkeitssensor bei Gruppe eingetragen, dessen Wert nutzen, ansonsten den generischen    
         UseLux = getState(Groups[gruppe][10]).val;
     };
     log("Groups[gruppe][8]=" + Groups[gruppe][8] + " UseLux=" + UseLux + " Groups[gruppe][9]=" + Groups[gruppe][9])
-    if (Groups[gruppe][8] && UseLux <= Groups[gruppe][9]) { //Helligkeitstriggerwert wurde erreicht bzw. unterschritten
+    if (Groups[gruppe][8] && UseLux <= Groups[gruppe][9] && !Groups[gruppe][0]) { //Helligkeitstriggerwert wurde erreicht bzw. unterschritten
         if (logging) log("Group " + gruppe + " Brightness triggervalue at Group " + Groups[gruppe][9] + " was reached or fallen below, actual Value is " + UseLux + " Lux");
-        setState(praefix + "." + gruppe + ".Power", true); //Anschalten via Switchdp um mit Schalter direkt ausschalten zu können
-                if (typeof Groups[gruppe][21] != "undefined" && typeof Groups[gruppe][21] != "null" && Groups[gruppe][21] != "" && Groups[gruppe][21] != 0) { //32=.AutoOn_Lux.AutoOnBri ist nicht leer
-                    DoBri(gruppe, Groups[gruppe][21]);
+
+        if (DoPower(gruppe, 1)) {
+            if (typeof Groups[gruppe][21] != "undefined" && typeof Groups[gruppe][21] != "null" && Groups[gruppe][21] != "" && Groups[gruppe][21] != 0) { //32=.AutoOn_Lux.AutoOnBri ist nicht leer
+                DoBri(gruppe, Groups[gruppe][21]);
+            } else {
+                if (Groups[gruppe][11]) {//Wenn Adaptive Bri ist aktiviert
+                    DoBri(gruppe, GetAdaptiveBri()); //Adaptive bri Wert setzen
                 } else {
                     DoBri(gruppe, Groups[gruppe][1]); //Gruppenbri verwenden
                 };
+            };
 
-                if (typeof Groups[gruppe][22] != "undefined" && Groups[gruppe][22] != "") { //33=.AutoOn_Lux.AutoOnColor ist nicht leer
-                    DoColor(gruppe, Groups[gruppe][22]);
-                } else {
-                    DoColor(gruppe, Groups[gruppe][3]); //Gruppencolor verwenden
-                };
+            if (typeof Groups[gruppe][22] != "undefined" && Groups[gruppe][22] != "") { //33=.AutoOn_Lux.AutoOnColor ist nicht leer
+                DoColor(gruppe, Groups[gruppe][22]);
+            } else {
+                DoColor(gruppe, Groups[gruppe][3]); //Gruppencolor verwenden
+            };
+            if (Groups[gruppe][12]) {//Wenn Adaptive Ct ist aktiviert
+                DoCt(gruppe, GetAdaptiveCt()); //Adaptive ct Wert setzen
+            } else {
+                DoCt(gruppe, Groups[gruppe][2]); //ct Wert aus Gruppe setzen
+            };
+
+        };
 
     };
 }
@@ -785,28 +863,47 @@ function AutoOn_Lux() {
         if (Groups[x][24] && ActualLux <= Groups[x][25] && !Groups[x][0] && !Groups[x][30]) { //Wenn .AutoOn_Lux.Enabled true und eingestellter Luxwert unterschritten ist und Gruppe ist inaktiv und Gruppe ist nicht gelockt
             if (logging) log("AutoOn_Lux() activated group=" + x + " Groups[x][0]=" + Groups[x][0]);
             if ((Groups[x][26] && PresenceCount > 0) || (Groups[x][28] && PresenceCount == 0)) { //Wenn ".AutoOn_Lux.OnlyIfPresence" ist true und Presence ist true ODER ".AutoOn_Lux.OnlyIfNoPresence" ist true und Presence ist 0
-                setState(praefix + "." + x + ".Power", true); //Anschalten
+                //setState(praefix + "." + x + ".Power", true); //Anschalten
+                if (DoPower(x, 1)) {
 
-                if (typeof Groups[x][32] != "undefined" && typeof Groups[x][32] != "null" && Groups[x][32] != "" && Groups[x][32] != 0) { //32=.AutoOn_Lux.AutoOnBri ist nicht leer
-                    DoBri(x, Groups[x][32]);
-                } else {
-                    DoBri(x, Groups[x][1]); //Gruppenbri verwenden
-                };
+                    if (typeof Groups[x][32] != "undefined" && typeof Groups[x][32] != "null" && Groups[x][32] != "" && Groups[x][32] != 0) { //32=.AutoOn_Lux.AutoOnBri ist nicht leer
+                        DoBri(x, Groups[x][32]);
+                    } else {
+                        if (Groups[x][11]) {//Wenn Adaptive Bri ist aktiviert
+                            DoBri(x, GetAdaptiveBri()); //Adaptive bri Wert setzen
+                        } else {
+                            DoBri(x, Groups[x][1]); //Gruppenbri verwenden
+                        };
+                    };
 
-                if (typeof Groups[x][33] != "undefined" && Groups[x][33] != "") { //33=.AutoOn_Lux.AutoOnColor ist nicht leer
-                    DoColor(x, Groups[x][33]);
-                } else {
-                    DoColor(x, Groups[x][3]); //Gruppencolor verwenden
+                    if (typeof Groups[x][33] != "undefined" && Groups[x][33] != "") { //33=.AutoOn_Lux.AutoOnColor ist nicht leer
+                        DoColor(x, Groups[x][33]);
+                    } else {
+                        DoColor(x, Groups[x][3]); //Gruppencolor verwenden
+                    };
+
+                    if (Groups[x][12]) {//Wenn Adaptive Ct ist aktiviert
+                        DoCt(x, GetAdaptiveCt()); //Adaptive ct Wert setzen
+                    } else {
+                        DoCt(x, Groups[x][2]); //ct Wert aus Gruppe setzen
+                    };
+
                 };
 
             };
             Groups[x][30] = true; //30=".AutoOn_Lux.DailyLock"
             setState(praefix + "." + x + ".AutoOn_Lux.DailyLock", true);
             if (logging) log("AutoOn_Lux() setting DailyLock to " + Groups[x][30]);
-        } else if (ActualLux > Groups[x][25] && Groups[x][30]) {
-            Groups[x][30] = false;
-            setState(praefix + "." + x + ".AutoOn_Lux.DailyLock", false);
-            if (logging) log("AutoOn_Lux() setting DailyLock to " + Groups[x][30]);
+        } else if (ActualLux > Groups[x][25] && Groups[x][30]) { //DailyLock zurücksetzen
+            Counter++;
+            if (Counter > 5) { //5 Werte abwarten = Ausreisserschutz wenns am morgen kurz mal dunkler wird
+                Counter = 0;
+                Groups[x][30] = false;
+                setState(praefix + "." + x + ".AutoOn_Lux.DailyLock", false);
+                if (logging) log("AutoOn_Lux() setting DailyLock to " + Groups[x][30]);
+
+            };
+
         };
     };
 }
@@ -816,14 +913,19 @@ function AutoOn_Lux() {
 function AutoOn_PresenceIncrease() {
     if (logging) log("Reaching AutoOn_PresenceIncrease()");
     for (let x = 0; x < Groups.length; x++) { //Alle Gruppen prüfen
-        if (Groups[x][27] && ActualLux <= Groups[x][29]) { //Wenn .AutoOn_PresenceIncrease.Enabled true und eingestellter Luxwert unterschritten ist
+        if (Groups[x][27] && ActualLux <= Groups[x][29] && !Groups[x][0]) { //Wenn .AutoOn_PresenceIncrease.Enabled true und eingestellter Luxwert unterschritten ist und die Gruppe nicht ohnehin an ist
             if (logging) log("AutoOn_PresenceIncrease() activated group=" + x);
-            setState(praefix + "." + x + ".Power", true); //Anschalten
-
+            //setState(praefix + "." + x + ".Power", true); 
+            if (DoPower(x, 1)) {//Anschalten
                 if (typeof Groups[x][34] != "undefined" && typeof Groups[x][34] != "null" && Groups[x][34] != "" && Groups[x][34] != 0) { //32=.AutoOn_Lux.AutoOnBri ist nicht leer
                     DoBri(x, Groups[x][34]);
                 } else {
-                    DoBri(x, Groups[x][1]); //Gruppenbri verwenden
+                    if (Groups[x][11]) {//Wenn Adaptive Bri ist aktiviert
+                        DoBri(x, GetAdaptiveBri()); //Adaptive bri Wert setzen
+                    } else {
+                        DoBri(x, Groups[x][1]); //Gruppenbri verwenden
+                    };
+
                 };
 
                 if (typeof Groups[x][35] != "undefined" && Groups[x][35] != "") { //33=.AutoOn_Lux.AutoOnColor ist nicht leer
@@ -831,6 +933,13 @@ function AutoOn_PresenceIncrease() {
                 } else {
                     DoColor(x, Groups[x][3]); //Gruppencolor verwenden
                 };
+                if (Groups[x][12]) {//Wenn Adaptive Ct ist aktiviert
+                    DoCt(x, GetAdaptiveCt()); //Adaptive ct Wert setzen
+                } else {
+                    DoCt(x, Groups[x][2]); //ct Wert aus Gruppe setzen
+                };
+
+            };
 
         };
     };
@@ -868,19 +977,25 @@ function CreateTrigger() {
     for (let x = 0; x < Groups.length; x++) {
         on({ id: praefix + "." + x + ".Power", change: "ne" }, function (dp) { //Bei Statusänderung Power
             if (logging) log("Group " + x + " Power triggered")
-            Groups[x][0] = dp.state.val;
+            //Groups[x][0] = dp.state.val;
             if (logging) log("Call DoPower, values are: x=" + x + " Power=" + dp.state.val + " color=" + Groups[x][3])
-            if (dp.state.val) {
+            if (dp.state.val && !Groups[x][0]) {
                 if (DoPower(x, 1)) { //Sobald alles angeschaltet
-                    DoColor(x, Groups[x][3]); //Farbe setzen 
-                    DoBri(x, Groups[x][1]); //Helligkeit setzen
-                    if (Groups[x][12]) {//Wenn Adaptive Ct ist aktiviert
-                        DoCt(x, GetAdaptiveCt()); //Adaptive ct Wert setzen
-                    } else {
-                        DoCt(x, Groups[x][2]); //ct Wert aus Gruppe setzen
+                    if (DoColor(x, Groups[x][3])) {
+                        if (Groups[x][11]) {//Wenn Adaptive Bri ist aktiviert
+                            DoBri(x, GetAdaptiveBri()); //Adaptive bri Wert setzen
+                        } else {
+                            DoBri(x, Groups[x][1]); //Gruppenbri verwenden
+                        };
+
+                        if (Groups[x][12]) {//Wenn Adaptive Ct ist aktiviert
+                            DoCt(x, GetAdaptiveCt()); //Adaptive ct Wert setzen
+                        } else {
+                            DoCt(x, Groups[x][2]); //ct Wert aus Gruppe setzen
+                        };
                     };
-                }
-            } else {
+                };
+            } else if (!dp.state.val && Groups[x][0]) {
                 DoPower(x, 0);
             };
         });
@@ -1050,7 +1165,33 @@ function CreateTrigger() {
 
 // Conversion functions, taken from: https://github.com/Qix-/color-convert
 
+function ConvertHsvToRgb(hsv) {
+    const h = hsv[0] / 60;
+    const s = hsv[1] / 100;
+    let v = hsv[2] / 100;
+    const hi = Math.floor(h) % 6;
 
+    const f = h - Math.floor(h);
+    const p = 255 * v * (1 - s);
+    const q = 255 * v * (1 - (s * f));
+    const t = 255 * v * (1 - (s * (1 - f)));
+    v *= 255;
+
+    switch (hi) {
+        case 0:
+            return [v, t, p];
+        case 1:
+            return [q, v, p];
+        case 2:
+            return [p, v, t];
+        case 3:
+            return [p, q, v];
+        case 4:
+            return [t, p, v];
+        case 5:
+            return [v, p, q];
+    }
+};
 
 function ConvertRgbToHsl(rgb) {
     const r = rgb[0] / 255;
