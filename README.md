@@ -9,6 +9,7 @@ Lichtsteuerung für Leuchtmittel unterschiedlicher Hersteller
 * Verwendung beliebig vieler Bewegungsmelder pro Gruppe
 * Ramping (langsame Änderung der Helligkeit bis Zielwert) für on und off
 * AutoOff nach Zeit / Kein Off bei Bewegung 
+* AutoOff nach Helligkeit
 * AutoOn bei Bewegung ab bestimmter Helligkeit 
 * AutoOn bei Dunkelheit
 * AutoOn bei Anwesenheitszählererhöhung ab bestimmter Helligkeit (Begrüßungslicht bei heimkommen)
@@ -17,13 +18,15 @@ Lichtsteuerung für Leuchtmittel unterschiedlicher Hersteller
 * Adaptive Farbtemperatur (Tags Tageslichtweiss, abends warmweiss)
 * Blinken (Alarm, Türklingel, etc.)
 
+![lc_info1.png](/admin/lc_info1.png) 
+
 ## Installation
 Nachdem ihr das Skript in ein neues Js Projekt kopiert habt, müßt ihr dem Skript Eure Leuchtmittel bekannt machen, es wird mindestens ein Schaltdatenpunkt (an/aus) erwartet. D.h. ihr könnt hier auch Steckdosen schalten mit herkömmlichen, nicht smarten, Leuchtmitteln, bzw. auch Geräte die keine Lampen sind.
 Optional könnt ihr Datenpunkte für Helligkeit, Farbe, Farbtemperatur und Farb/Weiss Modus umschaltung angeben. Zu den jeweiligen Einträgen gehören dann noch folgende Zusatzangaben: die jeweiligen min/max Werte des Datenpunktes, sowie die gewünschten Defaultwerte, nachfolgend das ganze im Detail:
 
 Als erstes gebt Ihr den gewünschten Gruppen Namen im entsprechenden Array an, hier wies bei mir aussieht:
 
-     const Groups = [["Flur Eg"], ["Wohnzimmer"], ["Toilette"], ["Flur Og"], ["Bad"], ["Dach"], ["Schlafzimmer Carlo"], ["Kueche Unterbau"], ["Küchenvorraum"]];
+    const GroupNames = ["Flur Eg", "Wohnzimmer", "Toilette", "Flur Og", "Bad", "Dach", "Schlafzimmer Carlo", "Kueche Unterbau", "Vitrine", "Hauseingang"]; 
 
 Diese Gruppen werden, mit 0 beginnend, nun durchgezählt und jede Gruppe bekommt Ihre Devices zugeteilt:
 
@@ -39,8 +42,16 @@ Diese Gruppen werden, mit 0 beginnend, nun durchgezählt und jede Gruppe bekommt
 
 Info: Die min. und max. Werte, werden benötigt da es sehr viele verschiedene Varianten für Helligkeit, ct, Farbe gibt. Bei den einen gehts von 0-100, bei anderen von 0-255 und bei wieder andere gehe z.B. von 250-454. Um das unter einen Hut zu kriegen wandelt das Skript den sich jeweils ergebenden Wertebereich bei Helligkeit und ct in einen Prozentwert um. Bei Farbwerten wird intern mit RGB gearbeitet, dieser Wert wird dann zum Zielsystem konvertiert.
 
+Für jede Gruppe wird nun im Skriptverzeichnis ein channel erstellt mit allen nötigen Datenpunkten. Ich habe aussagekräftige Bezeichnungen verwendet, sollte also selbsterklärend sein.
+In der channelroot findet ihr die allgemeinen Datenpunkte der Gruppe, in den Unterordnern jeweils die Datenpunkte der jeweiligen Funktion. Mit einer Ausnahme, dem Ordner MotionSensors. Dort ist Standardmäßig ein Datenpunkt, "Sensor0" vorhanden, ohne Inhalt. Hier gebt Ihr den Bewegungsmelder für diese Gruppe an. Verwendet Ihr mehr als einen Bewegungsmelder, könnt ihr die Liste mit "Sensor1", "Sensor2", usw beliebig fortführen.
+
+![lc_info2.png](/admin/lc_info2.png) 
 
 ## Changelog
+### V0.1.5 (06.10.2020)
+* Change: Einige rewrites, Strukturänderungen, Bugfixes
+* Add: Vis View hinzugefügt
+* Add: Neue Funktion AutoOff_Lux hinzugefügt
 ### V0.1.1 (06.10.2020)
 * Add: Neue Funktionen integriert, jetzt setzen von Helligkeit und Farbe für alle AutoOn Funktionen unabhängig der Gruppensettings einstellbar.
 * Change: Von Alpha nach Beta.
