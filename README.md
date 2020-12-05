@@ -17,7 +17,8 @@ Lichtsteuerung für Leuchtmittel unterschiedlicher Hersteller
 * Adaptive Helligkeit (Bei Aussenhelligkeit über 1000 Lux volle Helligkeit (100%), darunter linear dunkler bis 0 Lux (2%))
 * Adaptive Farbtemperatur (Tags Tageslichtweiss, abends warmweiss)
 * Blinken (Alarm, Türklingel, etc.)
-
+* Vis View (Import via "Widgets importieren")
+* 
 ![lc_info1.png](/admin/lc_info1.png) 
 
 ## Installation
@@ -50,7 +51,7 @@ In der channelroot findet ihr die allgemeinen Datenpunkte der Gruppe, in den Unt
 ## Changelog
 ### V0.1.5 (06.10.2020)
 * Change: Einige rewrites, Strukturänderungen, Bugfixes
-* Add: Vis View hinzugefügt
+* Add: Vis View hinzugefügt (Import via "Widgets importieren")
 * Add: Neue Funktion AutoOff_Lux hinzugefügt
 ### V0.1.1 (06.10.2020)
 * Add: Neue Funktionen integriert, jetzt setzen von Helligkeit und Farbe für alle AutoOn Funktionen unabhängig der Gruppensettings einstellbar.
