@@ -49,6 +49,9 @@ In der channelroot findet ihr die allgemeinen Datenpunkte der Gruppe, in den Unt
 ![lc_info2.png](/admin/lc_info2.png) 
 
 ## Changelog
+### V0.1.6 (27.3.2021)
+* Add: Filter für ungültige 0 Lux Werte eingebaut
+
 ### V0.1.5 (06.10.2020)
 * Change: Einige rewrites, Strukturänderungen, Bugfixes
 * Add: Vis View hinzugefügt (Import via "Widgets importieren")
