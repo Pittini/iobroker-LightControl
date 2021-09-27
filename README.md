@@ -1,4 +1,4 @@
-# iobroker-LightControl - BETAVERSION
+# iobroker-LightControl 2 - Pre BETAVERSION
 Lichtsteuerung für Leuchtmittel unterschiedlicher Hersteller
 
 
@@ -44,14 +44,16 @@ Diese Gruppen werden, mit 0 beginnend, nun durchgezählt und jede Gruppe bekommt
 Info: Die min. und max. Werte, werden benötigt da es sehr viele verschiedene Varianten für Helligkeit, ct, Farbe gibt. Bei den einen gehts von 0-100, bei anderen von 0-255 und bei wieder andere gehe z.B. von 250-454. Um das unter einen Hut zu kriegen wandelt das Skript den sich jeweils ergebenden Wertebereich bei Helligkeit und ct in einen Prozentwert um. Bei Farbwerten wird intern mit RGB gearbeitet, dieser Wert wird dann zum Zielsystem konvertiert.
 
 Für jede Gruppe wird nun im Skriptverzeichnis ein channel erstellt mit allen nötigen Datenpunkten. Ich habe aussagekräftige Bezeichnungen verwendet, sollte also selbsterklärend sein.
-In der channelroot findet ihr die allgemeinen Datenpunkte der Gruppe, in den Unterordnern jeweils die Datenpunkte der jeweiligen Funktion. Mit einer Ausnahme, dem Ordner MotionSensors. Dort ist Standardmäßig ein Datenpunkt, "Sensor0" vorhanden, ohne Inhalt. Hier gebt Ihr den Bewegungsmelder für diese Gruppe an. Verwendet Ihr mehr als einen Bewegungsmelder, könnt ihr die Liste mit "Sensor1", "Sensor2", usw beliebig fortführen.
+In der channelroot findet ihr die allgemeinen Datenpunkte der Gruppe, in den Unterordnern jeweils die Datenpunkte der jeweiligen Funktion. 
 
 ![lc_info2.png](/admin/lc_info2.png) 
 
 ## Changelog
+### V0.2.0 (24.7.2021)
+* Init V2, kompletter Rewrite.
+
 ### V0.1.6 (27.3.2021)
 * Add: Filter für ungültige 0 Lux Werte eingebaut
-
 ### V0.1.5 (06.10.2020)
 * Change: Einige rewrites, Strukturänderungen, Bugfixes
 * Add: Vis View hinzugefügt (Import via "Widgets importieren")
