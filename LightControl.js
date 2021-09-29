@@ -314,7 +314,7 @@ const LightGroups = {
             }
         },
         sensors: {
-
+            0: { id: 'zigbee.0.00158d00042ae926.opened'/*Is open*/ }
         }
     },
     9: {
@@ -957,7 +957,7 @@ async function GroupPowerOnOff(Group, OnOff) {
     //Ausschalten mit Ramping
     else if (!OnOff && LightGroups[Group].rampOff.enabled && LightGroups[Group].rampOff.switchOutletsLast) { ////Ausschalten mit Ramping und einfache Lampen zuletzt
         log("Ausschalten mit Ramping und einfache Lampen zuletzt für " + LightGroups[Group].description);
-
+                clearInterval(RampOffIntervalObject[Group]);
         RampOffIntervalObject[Group] = setInterval(function () { // Interval starten
             // SetBrightness(Group, LightGroups[Group].bri - LightGroups[Group].bri / RampSteps - Math.round(RampSteps * LoopCount * (LightGroups[Group].bri / 100)));
             setDeviceBri(Group, LightGroups[Group].bri - LightGroups[Group].bri / RampSteps - Math.round(RampSteps * LoopCount * (LightGroups[Group].bri / 100)));
@@ -989,9 +989,9 @@ async function GroupPowerOnOff(Group, OnOff) {
             setDeviceBri(Group, LightGroups[Group].bri - LightGroups[Group].bri / RampSteps - Math.round(RampSteps * LoopCount * (LightGroups[Group].bri / 100)));
             LoopCount++;
             log("Loopcount=" + LoopCount + " - " + " Rampsteps=" + RampSteps + " RampOffTime= " + LightGroups[Group].rampOff.time);
-            LightGroups[Group].power = false;
 
             if (LoopCount >= RampSteps) {
+            LightGroups[Group].power = false;
 
                 DeviceSwitch(Group, OnOff);
                 clearInterval(RampOffIntervalObject[Group]);
@@ -1070,7 +1070,7 @@ async function AutoOnLux(Group) {
 
 async function AutoOnMotion(Group) {
     //  log("Reaching AutoOnMotion for Group:," + Group + " enabled=" + LightGroups[Group].autoOnMotion.enabled + " ,actuallux=" + LightGroups[Group].actualLux + " ,minLux=" + LightGroups[Group].autoOnMotion.minLux)
-    if (LightGroups[Group].autoOnMotion.enabled && LightGroups[Group].actualLux < LightGroups[Group].autoOnMotion.minLux) {
+    if (LightGroups[Group].autoOnMotion.enabled && LightGroups[Group].actualLux < LightGroups[Group].autoOnMotion.minLux && LightGroups[Group].isMotion) {
         log("Motion for Group " + Group + " detected, switching on")
         await GroupPowerOnOff(Group, true);
         if (LightGroups[Group].autoOnMotion.bri != 0) {
