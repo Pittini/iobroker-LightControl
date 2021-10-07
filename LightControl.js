@@ -1,4 +1,4 @@
-const Version = "2.0.11" //vom 4.10.2021 - Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
+const Version = "2.0.12" //vom 7.10.2021 - Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
 
 log("starting LightControl V." + Version);
 
@@ -357,6 +357,8 @@ let RampOnIntervalObject = {};
 let RampOffIntervalObject = {};
 let AutoOffTimeoutObject = {};
 let TickerIntervalObj = {};
+let BlinkIntervalObj = {};
+
 
 let ActualGenericLux = 0;
 let ActualPresence = true;
@@ -382,6 +384,7 @@ const GroupTemplate = {
     autoOffTimed: {
         enabled: { id: "", common: { read: true, write: true, name: "Timecontrolled auto off enabled?", type: "boolean", role: "switch.enable", def: false } },
         autoOffTime: { id: "", common: { read: true, write: true, name: "Time until auto off", type: "number", role: "level.timer", def: 120, min: 0, unit: "sek" } },
+        noAutoOffWhenMotionMode: { id: "", common: { read: true, write: true, name: "Mode for no AutoOffWhenMotion", type: "number", role: "state", def: 0, states: { 0: "restart at every motion", 1: "check motion at end of time" } } },
         noAutoOffWhenMotion: { id: "", common: { read: true, write: true, name: "No timed auto off if motion detected", type: "boolean", role: "switch", def: true } }
     },
     autoOffLux: {
@@ -428,7 +431,6 @@ const GroupTemplate = {
         blinks: { id: "", common: { read: true, write: true, name: "How many blinks at activation?", type: "number", role: "level", def: 3, min: 1 } }
     }
 }
-
 
 main();
 
@@ -499,7 +501,7 @@ async function init() {
                         //  log("Setting Trigger for: " + GroupTemplate[prop1][z].id)
 
                         on({ id: GroupTemplate[prop1][z].id, change: "any", ack: false }, function (dp) { //Trigger erstellen
-                            log("Triggered " + dp.id + " new value is " + dp.state.val)
+                          if (logging)  log("Triggered " + dp.id + " new value is " + dp.state.val)
                             LightGroups[Group][prop1][z] = dp.state.val;
                             Controller(Group, prop1 + "." + z, dp.oldState.val, dp.state.val);
                         });
@@ -537,7 +539,7 @@ async function init() {
                         // if (prop1 == "luxSensorOid") ChangeLuxSensorTrigger(Group, prop1, dp.oldState.val, dp.state.val);
                         Controller(Group, prop1, dp.oldState.val, dp.state.val);
                     });
-                }
+                };
             };
         };
 
@@ -556,6 +558,7 @@ async function init() {
     onStop(function () { //Bei Scriptende alle Intervalle und Timeouts löschen
         clearRampOnIntervals(null);
         clearRampOffIntervals(null);
+        clearBlinkIntervals(null);
         clearInterval(TickerIntervalObj);
     }, 10);
     return true;
@@ -612,6 +615,22 @@ function clearAutoOffTimeout(Group) {
     };
 }
 
+function clearBlinkIntervals(Group) {
+    if (Group == null) {
+        for (let x in LightGroups) {
+            if (typeof BlinkIntervalObj[x] == "object") {
+                if (logging) log("BlinkInterval for Group=" + x + " deleted.");
+                clearInterval(BlinkIntervalObj[x]);
+            };
+        };
+    } else {
+        if (typeof BlinkIntervalObj[Group] == "object") {
+            if (logging) log("BlinkInterval for Group=" + Group + " deleted.");
+            clearInterval(BlinkIntervalObj[Group]);
+        };
+    };
+
+}
 /* ------------------------- FUNCTIONS FÜR LUXSENSOR HANDLNG --------------------------------- */
 /*
 function ChangeLuxSensorTrigger(Group, prop, oldsensor, newsensor) { //Used by init
@@ -668,9 +687,8 @@ async function DoAllTheSensorThings(Group) {
         LightGroups[Group].sensors[sensorCount].isMotion = (await getStateAsync(LightGroups[Group].sensors[sensorCount].id)).val; //Inhalt lesen und neues Property anlegen und füllen
         //Trigger für Dp Inhalt erzeugen wenn nicht leer
         if (LightGroups[Group].sensors[sensorCount].id != "") {
-            on({ id: LightGroups[Group].sensors[sensorCount].id, change: "ne", ack: true }, function (dp) { //Trigger erstellen für eingetragenen Sensor
-                // log("Triggered linked Sensor " + dp.id + " new value is " + dp.state.val);
-                //Controller(Group, prop + "." + tempProperty + ".sensorVal", dp.oldState.val, dp.state.val);
+            on({ id: LightGroups[Group].sensors[sensorCount].id, change: "any", ack: true }, function (dp) { //Trigger erstellen für eingetragenen Sensor
+                if (logging) log("Triggered linked Sensor " + dp.id + " new value is " + dp.state.val);
                 LightGroups[Group].sensors[sensorCount].isMotion = dp.state.val;
                 SummarizeSensors(Group);
             });
@@ -760,14 +778,12 @@ async function SetCt(Group) {
 }
 
 function ConvertKelvin(MinVal, MaxVal, Ct) {
-    let KelvinMin = 2700;
-    let KelvinMax = 6500;
-
-    let KelvinRange = KelvinMax - KelvinMin; //Wertebereich Kelvin
+    if (logging) log("Reaching ConvertKelvin");
+    let KelvinRange = maxCt - minCt; //Wertebereich Kelvin
     let ValRange = MaxVal - MinVal; //Wertebereich Val
 
     // log("KelvinRange=" + KelvinRange + " ValRange=" + ValRange + " Ct=" + Ct)
-    let KelvinProz = (Ct - KelvinMin) / (KelvinRange / 100) //Prozent des aktuellen Kelvinwertes
+    let KelvinProz = (Ct - minCt) / (KelvinRange / 100) //Prozent des aktuellen Kelvinwertes
     let ValProz = ValRange / 100 //1% des Value Wertebereichs
     let KonvertedCt = Math.round(ValProz * KelvinProz + MinVal)
     //  log("KonvertedCt=" + KonvertedCt + " KelvinProz=" + KelvinProz + " ValProz=" + ValProz)
@@ -807,7 +823,8 @@ function AdaptiveCt() {
         adaptiveCtSolar = Math.round(minCt + sunMinutesDay * RangePerMinute * sunpos.altitude); // Solar = Sinusrampe entsprechend direkter Elevation, max Ct differiert nach Jahreszeiten
         adaptiveCtSolarInterpolated = Math.round(minCt + sunMinutesDay * RangePerMinute * sunpos.altitude * (1 / sunposNoon.altitude));// SolarInterpolated = Wie Solar, jedoch wird der Wert so hochgerechnet dass immer zum Sonnenmittag maxCt gesetzt wird, unabhängig der Jahreszeit
     };
-    log("adaptiveCtLinear=" + adaptiveCtLinear + " adaptiveCtSolar=" + adaptiveCtSolar + " adaptiveCtSolarInterpolated=" + adaptiveCtSolarInterpolated)
+    if (logging) log("adaptiveCtLinear=" + adaptiveCtLinear + " adaptiveCtSolar=" + adaptiveCtSolar + " adaptiveCtSolarInterpolated=" + adaptiveCtSolarInterpolated);
+
     for (let Group in LightGroups) {
         switch (LightGroups[Group].adaptiveCtMode) {
             case "linear":
@@ -830,11 +847,11 @@ function AdaptiveCt() {
 }
 
 async function SetWhiteSubstituteColor(Group) {
-    // log ("Reaching WhiteSubstituteColor for Group"+Group+" = "+LightGroups[Group].description+" LightGroups[Group].power="+LightGroups[Group].power+" LightGroups[Group].color ="+LightGroups[Group].color)
+    if (logging) log("Reaching WhiteSubstituteColor for Group" + Group + " = " + LightGroups[Group].description + " LightGroups[Group].power=" + LightGroups[Group].power + " LightGroups[Group].color =" + LightGroups[Group].color)
     if (LightGroups[Group].power && LightGroups[Group].color.toUpperCase() == "#FFFFFF") { //Nur ausführen bei anschalten und Farbe weiß
         // log("anschalten und Farbe weiß")
-        if (LightGroups[Group].ct < (maxCt - minCt) / 3 + minCt || LightGroups[Group].ct > (maxCt - minCt) / 3 * 2 + minCt) { //Ct Regelbereich dritteln, erstes drittel ist ww, 2tes kw und drittes wieder ww
-            log("Warmweiss")
+        if (LightGroups[Group].ct < ((maxCt - minCt) / 4 + minCt) || LightGroups[Group].ct > ((maxCt - minCt) / 4 * 3 + minCt)) { //Ct Regelbereich vierteln, erstes viertel ist ww, 2tes und drittes wieder kw, das letzte ww
+            log("Warmweiss - ct=" + LightGroups[Group].ct + " (maxCt - minCt) / 4 + minCt=" + ((maxCt - minCt) / 4 + minCt) + " (maxCt - minCt) / 4 * 3 + minCt=" + ((maxCt - minCt) / 4 * 3 + minCt))
             for (let Light in LightGroups[Group].lights) {
                 if (LightGroups[Group].lights[Light].ct.oid == "" && LightGroups[Group].lights[Light].color.oid != "" && LightGroups[Group].lights[Light].color.warmWhiteColor != "" && LightGroups[Group].lights[Light].color.dayLightColor != "") {
                     await setStateAsync(LightGroups[Group].lights[Light].color.oid, LightGroups[Group].lights[Light].color.warmWhiteColor, false);
@@ -870,23 +887,33 @@ async function SetColorMode(Group) {
     return true;
 }
 
-async function SetColor(Group) {
-    log("Reaching SetColor for Group " + Group + " power=" + LightGroups[Group].power)
+async function SetColor(Group, Color) {
+    log("Reaching SetColor for Group " + Group + " power=" + LightGroups[Group].power);
+    let rgbTemp= ConvertHexToRgb(Color);
     if (LightGroups[Group].power) {
         for (let Light in LightGroups[Group].lights) { //Alle Lampen der Gruppe durchgehen
             if (LightGroups[Group].lights[Light].color.oid != "") { //Prüfen ob Datenpunkt für Color vorhanden
-                if (LightGroups[Group].lights[Light].color.type == "hex") { //Keine Konvertierung nötig
-                    log("LightGroups[Group].lights[Light].color.type=" + LightGroups[Group].lights[Light].color.type)
-                    await setStateAsync(LightGroups[Group].lights[Light].color.oid, LightGroups[Group].color, false);
-                } else if (LightGroups[Group].lights[Light].color.type == "rgb") {
 
-                }
-
+                log("LightGroups[Group].lights[Light].color.type=" + LightGroups[Group].lights[Light].color.type)
+                switch (LightGroups[Group].lights[Light].color.type) {
+                    case "hex": //Keine Konvertierung nötig
+                        await setStateAsync(LightGroups[Group].lights[Light].color.oid, Color, false);
+                        break;
+                    case "rgb":
+                        await setStateAsync(LightGroups[Group].lights[Light].color.oid, rgbTemp, false);
+                        break;
+                    case "xy":
+                        await setStateAsync(LightGroups[Group].lights[Light].color.oid, ConvertRgbToXy(rgbTemp), false);
+                        break;
+                    default:
+                        log("Unknown colortype, please specify", "warn");
+                };
             };
         };
         return true;
-    }
+    };
 }
+
 
 /* ------------------------- FUNCTIONS FOR Switching On/Off --------------------------------- */
 
@@ -1067,9 +1094,14 @@ async function AutoOnLux(Group) {
                 await setStateAsync(praefix + "." + Group + ".autoOnLux.dailyLock", true, true);
             };
             if (LightGroups[Group].autoOnLux.bri != 0) {
-                SetBrightness(Group, LightGroups[Group].autoOnLux.bri);
+                await SetBrightness(Group, LightGroups[Group].autoOnLux.bri);
             };
-        }
+            await SetWhiteSubstituteColor(Group);
+            if (LightGroups[Group].autoOnLux.color != "") {
+                await SetColor(Group, LightGroups[Group].autoOnLux.color);
+            };
+
+        };
     };
 
     if (LightGroups[Group].actualLux > LightGroups[Group].autoOnLux.minLux && LightGroups[Group].autoOnLux.dailyLock) {
@@ -1085,9 +1117,12 @@ async function AutoOnMotion(Group) {
         log("Motion for Group " + Group + " detected, switching on")
         await GroupPowerOnOff(Group, true);
         if (LightGroups[Group].autoOnMotion.bri != 0) {
-            SetBrightness(Group, LightGroups[Group].autoOnMotion.bri);
+            await SetBrightness(Group, LightGroups[Group].autoOnMotion.bri);
         };
-        SetWhiteSubstituteColor(Group)
+        await SetWhiteSubstituteColor(Group);
+        if (LightGroups[Group].autoOnMotion.color != "") {
+            await SetColor(Group, LightGroups[Group].autoOnMotion.color);
+        };
     };
 }
 
@@ -1097,12 +1132,34 @@ async function AutoOnPresenceIncrease() {
         if (LightGroups[Group].autoOnPresenceIncrease.enabled && LightGroups[Group].actualLux < LightGroups[Group].autoOnPresenceIncrease.minLux && !LightGroups[Group].power) {
             await GroupPowerOnOff(Group, true);
             if (LightGroups[Group].autoOnPresenceIncrease.bri != 0) {
-                SetBrightness(Group, LightGroups[Group].autoOnPresenceIncrease.bri);
+                await SetBrightness(Group, LightGroups[Group].autoOnPresenceIncrease.bri);
+            };
+            await SetWhiteSubstituteColor(Group);
+            if (LightGroups[Group].autoOnPresenceIncrease.color != "") {
+                await SetColor(Group, LightGroups[Group].autoOnPresenceIncrease.color);
             };
         };
     }
 }
 
+async function blink(Group) {
+    let loopcount = 0;
+    clearBlinkIntervals(Group);
+    BlinkIntervalObj[Group] = setInterval(function () { // Wenn 
+        loopcount++;
+
+        if (loopcount <= LightGroups[Group].blink.blinks * 2) {
+            if (loopcount / 2 == Math.round(loopcount / 2)) {
+                log("aus " + loopcount)
+            } else {
+                log("an " + loopcount)
+            };
+        } else {
+            clearBlinkIntervals(Group);
+        };
+
+    }, LightGroups[Group].blink.frequency / 2 * 1000);
+}
 
 /* ------------------------- FUNCTIONS FOR Switching Off --------------------------------- */
 
@@ -1138,18 +1195,15 @@ function AutoOffTimed(Group) {
     if (LightGroups[Group].autoOffTimed.enabled) {
         clearAutoOffTimeout(Group);
         AutoOffTimeoutObject[Group] = setTimeout(function () { // Interval starten
-            if (LightGroups[Group].autoOffTimed.noAutoOffWhenMotion && LightGroups[Group].isMotion) { //Wenn noAutoOffWhneotion aktiv und Bewegung erkannt
+            if (LightGroups[Group].autoOffTimed.noAutoOffWhenMotion && LightGroups[Group].isMotion) { //Wenn noAutoOffWhenmotion aktiv und Bewegung erkannt
                 log("Motion detected, restarting Timeout");
                 AutoOffTimed(Group);// TimeOut neustarten
             } else {
                 log("Group " + Group + " timed out, switching off. Motion=" + LightGroups[Group].isMotion);
                 GroupPowerOnOff(Group, false);
-
             };
         }, Math.round(LightGroups[Group].autoOffTimed.autoOffTime) * 1000); //
-
     };
-
 }
 
 // -----------------------
@@ -1171,7 +1225,14 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
             AdaptiveBri(Group);
             break;
         case "isMotion":
+            if (LightGroups[Group].autoOffTimed.noAutoOffWhenMotionMode == 0 && NewVal && LightGroups[Group].power) { //AutoOff Timer wird bei jeder Bewegung neugestartet
+                log("Motion detected, restarting AutoOff Timer");
+                AutoOffTimed(Group);
+            } ;
+
             LightGroups[Group].isMotion = NewVal;
+
+
             AutoOnMotion(Group);
             break;
         case "rampOn.enabled":
@@ -1182,7 +1243,8 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
             break;
         case "autoOffTimed.enabled":
         case "autoOffTimed.autoOffTime":
-
+        case "autoOffTimed.noAutoOffWhenMotion":
+        case "autoOffTimed.noAutoOffWhenMotionMode":
             break;
         case "autoOnMotion.enabled":
         case "autoOnMotion.minLux":
@@ -1215,8 +1277,9 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
             await SetWhiteSubstituteColor(Group);
             break;
         case "color":
-            await SetColor(Group);
-            if (NewVal.toUpperCase() == "#FFFFFF") await SetWhiteSubstituteColor(Group);
+            LightGroups[Group].color = NewVal.toUpperCase();
+            await SetColor(Group, LightGroups[Group].color);
+            if (LightGroups[Group].color == "#FFFFFF") await SetWhiteSubstituteColor(Group);
             await SetColorMode(Group);
 
             break;
@@ -1224,14 +1287,11 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
             if (NewVal != OldVal) await GroupPowerOnOff(Group, NewVal); //Alles schalten
             if (!LightGroups[Group].rampOn.enabled && NewVal) await SetBrightness(Group, LightGroups[Group].bri); //Wenn kein RampOn Helligkeit direkt setzen
             if (NewVal) {
-                await SetColor(Group);//Nach anschalten Color setzen
-                if (LightGroups[Group].color.toUpperCase() == "#FFFFFF") await SetWhiteSubstituteColor(Group);
+                await SetColor(Group, LightGroups[Group].color);//Nach anschalten Color setzen
+                if (LightGroups[Group].color == "#FFFFFF") await SetWhiteSubstituteColor(Group);
                 await SetColorMode(Group); //Nach anschalten Colormode setzen
-                if (LightGroups[Group].color.toUpperCase() == "#FFFFFF") await SetCt(Group);//Nach anschalten Ct setzen
+                if (LightGroups[Group].color == "#FFFFFF") await SetCt(Group);//Nach anschalten Ct setzen
 
-            };
-            if (LightGroups[Group].autoOffTimed.enabled && NewVal) { //Wenn Zeitabschaltung und Anschaltung
-                //   AutoOffTimed(Group); //
             };
             break;
         case "powerCleaningLight":
@@ -1244,12 +1304,433 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
             break;
         case "adaptiveCtMode":
             break;
+        case "blink.enabled":
+            blink(Group);
+            break;
         default:
             log("Error, unknown or missing property: " + prop1, "warn");
     };
 
+}
 
+// Conversion functions, taken from: https://github.com/Qix-/color-convert
+
+function ConvertHsvToRgb(hsv) {
+    const h = hsv[0] / 60;
+    const s = hsv[1] / 100;
+    let v = hsv[2] / 100;
+    const hi = Math.floor(h) % 6;
+
+    const f = h - Math.floor(h);
+    const p = 255 * v * (1 - s);
+    const q = 255 * v * (1 - (s * f));
+    const t = 255 * v * (1 - (s * (1 - f)));
+    v *= 255;
+
+    switch (hi) {
+        case 0:
+            return [v, t, p];
+        case 1:
+            return [q, v, p];
+        case 2:
+            return [p, v, t];
+        case 3:
+            return [p, q, v];
+        case 4:
+            return [t, p, v];
+        case 5:
+            return [v, p, q];
+    }
+};
+
+function ConvertRgbToHsl(rgb) {
+    const r = rgb[0] / 255;
+    const g = rgb[1] / 255;
+    const b = rgb[2] / 255;
+    const min = Math.min(r, g, b);
+    const max = Math.max(r, g, b);
+    const delta = max - min;
+    let h;
+    let s;
+
+    if (max === min) {
+        h = 0;
+    } else if (r === max) {
+        h = (g - b) / delta;
+    } else if (g === max) {
+        h = 2 + (b - r) / delta;
+    } else if (b === max) {
+        h = 4 + (r - g) / delta;
+    }
+
+    h = Math.min(h * 60, 360);
+
+    if (h < 0) {
+        h += 360;
+    }
+
+    const l = (min + max) / 2;
+
+    if (max === min) {
+        s = 0;
+    } else if (l <= 0.5) {
+        s = delta / (max + min);
+    } else {
+        s = delta / (2 - max - min);
+    }
+
+    return [h, s * 100, l * 100];
+};
+
+function ConvertRgbToHsv(rgb) {
+    let rdif;
+    let gdif;
+    let bdif;
+    let h;
+    let s;
+
+    const r = rgb[0] / 255;
+    const g = rgb[1] / 255;
+    const b = rgb[2] / 255;
+    const v = Math.max(r, g, b);
+    const diff = v - Math.min(r, g, b);
+    const diffc = function (c) {
+        return (v - c) / 6 / diff + 1 / 2;
+    };
+
+    if (diff === 0) {
+        h = 0;
+        s = 0;
+    } else {
+        s = diff / v;
+        rdif = diffc(r);
+        gdif = diffc(g);
+        bdif = diffc(b);
+
+        if (r === v) {
+            h = bdif - gdif;
+        } else if (g === v) {
+            h = (1 / 3) + rdif - bdif;
+        } else if (b === v) {
+            h = (2 / 3) + gdif - rdif;
+        }
+
+        if (h < 0) {
+            h += 1;
+        } else if (h > 1) {
+            h -= 1;
+        }
+    }
+
+    return [
+        h * 360,
+        s * 100,
+        v * 100
+    ];
+};
+
+function ConvertRgbToCmyk(rgb) {
+    const r = rgb[0] / 255;
+    const g = rgb[1] / 255;
+    const b = rgb[2] / 255;
+
+    const k = Math.min(1 - r, 1 - g, 1 - b);
+    const c = (1 - r - k) / (1 - k) || 0;
+    const m = (1 - g - k) / (1 - k) || 0;
+    const y = (1 - b - k) / (1 - k) || 0;
+
+    return [c * 100, m * 100, y * 100, k * 100];
+};
+
+function comparativeDistance(x, y) {
+    /*
+        See https://en.m.wikipedia.org/wiki/Euclidean_distance#Squared_Euclidean_distance
+    */
+    return (
+        ((x[0] - y[0]) ** 2) +
+        ((x[1] - y[1]) ** 2) +
+        ((x[2] - y[2]) ** 2)
+    );
+}
+
+function ConvertRgbToKeyword(rgb) {
+    const reversed = reverseKeywords[rgb];
+    if (reversed) {
+        return reversed;
+    }
+
+    let currentClosestDistance = Infinity;
+    let currentClosestKeyword;
+
+    for (const keyword of Object.keys(cssKeywords)) {
+        const value = cssKeywords[keyword];
+
+        // Compute comparative distance
+        const distance = comparativeDistance(rgb, value);
+
+        // Check if its less, if so set as closest
+        if (distance < currentClosestDistance) {
+            currentClosestDistance = distance;
+            currentClosestKeyword = keyword;
+        }
+    }
+
+    return currentClosestKeyword;
+};
+
+function ConvertKeywordToRgb(keyword) {
+    return cssKeywords[keyword];
+};
+
+function ConvertRgbToXyz(rgb) {
+    let r = rgb[0] / 255;
+    let g = rgb[1] / 255;
+    let b = rgb[2] / 255;
+
+    // Assume sRGB
+    r = r > 0.04045 ? (((r + 0.055) / 1.055) ** 2.4) : (r / 12.92);
+    g = g > 0.04045 ? (((g + 0.055) / 1.055) ** 2.4) : (g / 12.92);
+    b = b > 0.04045 ? (((b + 0.055) / 1.055) ** 2.4) : (b / 12.92);
+
+    const x = (r * 0.4124564) + (g * 0.3575761) + (b * 0.1804375);
+    const y = (r * 0.2126729) + (g * 0.7151522) + (b * 0.072175);
+    const z = (r * 0.0193339) + (g * 0.119192) + (b * 0.9503041);
+
+    return [x * 100, y * 100, z * 100];
+};
+
+
+function ConvertRgbToXy(rgb) {
+    if (logging) log("Reaching ConvertRgbToXy(rgb) rgb=" + rgb)
+    let r = rgb[0] / 255;
+    let g = rgb[1] / 255;
+    let b = rgb[2] / 255;
+
+    // Assume sRGB
+    r = r > 0.04045 ? (((r + 0.055) / 1.055) ** 2.4) : (r / 12.92);
+    g = g > 0.04045 ? (((g + 0.055) / 1.055) ** 2.4) : (g / 12.92);
+    b = b > 0.04045 ? (((b + 0.055) / 1.055) ** 2.4) : (b / 12.92);
+
+    const x = (r * 0.4124564) + (g * 0.3575761) + (b * 0.1804375);
+    const y = (r * 0.2126729) + (g * 0.7151522) + (b * 0.072175);
+    const z = (r * 0.0193339) + (g * 0.119192) + (b * 0.9503041);
+
+    let X = x / (x + y + z);
+    let Y = y / (x + y + z);
+    return [X, Y];
+    //return X + "," + Y;
 
 }
 
+function ConvertRgbToLab(rgb) {
+    const xyz = ConvertRgbToXyz(rgb);
+    let x = xyz[0];
+    let y = xyz[1];
+    let z = xyz[2];
+
+    x /= 95.047;
+    y /= 100;
+    z /= 108.883;
+
+    x = x > 0.008856 ? (x ** (1 / 3)) : (7.787 * x) + (16 / 116);
+    y = y > 0.008856 ? (y ** (1 / 3)) : (7.787 * y) + (16 / 116);
+    z = z > 0.008856 ? (z ** (1 / 3)) : (7.787 * z) + (16 / 116);
+
+    const l = (116 * y) - 16;
+    const a = 500 * (x - y);
+    const b = 200 * (y - z);
+
+    return [l, a, b];
+};
+
+function ConvertRgbToHex(args) {
+    const integer = ((Math.round(args[0]) & 0xFF) << 16)
+        + ((Math.round(args[1]) & 0xFF) << 8)
+        + (Math.round(args[2]) & 0xFF);
+
+    const string = integer.toString(16).toUpperCase();
+    return '000000'.substring(string.length) + string;
+};
+
+function ConvertHexToRgb(args) {
+    const match = args.toString(16).match(/[a-f0-9]{6}|[a-f0-9]{3}/i);
+    if (!match) {
+        return [0, 0, 0];
+    }
+
+    let colorString = match[0];
+
+    if (match[0].length === 3) {
+        colorString = colorString.split('').map(char => {
+            return char + char;
+        }).join('');
+    }
+
+    const integer = parseInt(colorString, 16);
+    const r = (integer >> 16) & 0xFF;
+    const g = (integer >> 8) & 0xFF;
+    const b = integer & 0xFF;
+
+    return [r, g, b];
+};
+
+const cssKeywords = {
+    "aliceblue": [240, 248, 255],
+    "antiquewhite": [250, 235, 215],
+    "aqua": [0, 255, 255],
+    "aquamarine": [127, 255, 212],
+    "azure": [240, 255, 255],
+    "beige": [245, 245, 220],
+    "bisque": [255, 228, 196],
+    "black": [0, 0, 0],
+    "blanchedalmond": [255, 235, 205],
+    "blue": [0, 0, 255],
+    "blueviolet": [138, 43, 226],
+    "brown": [165, 42, 42],
+    "burlywood": [222, 184, 135],
+    "cadetblue": [95, 158, 160],
+    "chartreuse": [127, 255, 0],
+    "chocolate": [210, 105, 30],
+    "coral": [255, 127, 80],
+    "cornflowerblue": [100, 149, 237],
+    "cornsilk": [255, 248, 220],
+    "crimson": [220, 20, 60],
+    "cyan": [0, 255, 255],
+    "darkblue": [0, 0, 139],
+    "darkcyan": [0, 139, 139],
+    "darkgoldenrod": [184, 134, 11],
+    "darkgray": [169, 169, 169],
+    "darkgreen": [0, 100, 0],
+    "darkgrey": [169, 169, 169],
+    "darkkhaki": [189, 183, 107],
+    "darkmagenta": [139, 0, 139],
+    "darkolivegreen": [85, 107, 47],
+    "darkorange": [255, 140, 0],
+    "darkorchid": [153, 50, 204],
+    "darkred": [139, 0, 0],
+    "darksalmon": [233, 150, 122],
+    "darkseagreen": [143, 188, 143],
+    "darkslateblue": [72, 61, 139],
+    "darkslategray": [47, 79, 79],
+    "darkslategrey": [47, 79, 79],
+    "darkturquoise": [0, 206, 209],
+    "darkviolet": [148, 0, 211],
+    "deeppink": [255, 20, 147],
+    "deepskyblue": [0, 191, 255],
+    "dimgray": [105, 105, 105],
+    "dimgrey": [105, 105, 105],
+    "dodgerblue": [30, 144, 255],
+    "firebrick": [178, 34, 34],
+    "floralwhite": [255, 250, 240],
+    "forestgreen": [34, 139, 34],
+    "fuchsia": [255, 0, 255],
+    "gainsboro": [220, 220, 220],
+    "ghostwhite": [248, 248, 255],
+    "gold": [255, 215, 0],
+    "goldenrod": [218, 165, 32],
+    "gray": [128, 128, 128],
+    "green": [0, 128, 0],
+    "greenyellow": [173, 255, 47],
+    "grey": [128, 128, 128],
+    "honeydew": [240, 255, 240],
+    "hotpink": [255, 105, 180],
+    "indianred": [205, 92, 92],
+    "indigo": [75, 0, 130],
+    "ivory": [255, 255, 240],
+    "khaki": [240, 230, 140],
+    "lavender": [230, 230, 250],
+    "lavenderblush": [255, 240, 245],
+    "lawngreen": [124, 252, 0],
+    "lemonchiffon": [255, 250, 205],
+    "lightblue": [173, 216, 230],
+    "lightcoral": [240, 128, 128],
+    "lightcyan": [224, 255, 255],
+    "lightgoldenrodyellow": [250, 250, 210],
+    "lightgray": [211, 211, 211],
+    "lightgreen": [144, 238, 144],
+    "lightgrey": [211, 211, 211],
+    "lightpink": [255, 182, 193],
+    "lightsalmon": [255, 160, 122],
+    "lightseagreen": [32, 178, 170],
+    "lightskyblue": [135, 206, 250],
+    "lightslategray": [119, 136, 153],
+    "lightslategrey": [119, 136, 153],
+    "lightsteelblue": [176, 196, 222],
+    "lightyellow": [255, 255, 224],
+    "lime": [0, 255, 0],
+    "limegreen": [50, 205, 50],
+    "linen": [250, 240, 230],
+    "magenta": [255, 0, 255],
+    "maroon": [128, 0, 0],
+    "mediumaquamarine": [102, 205, 170],
+    "mediumblue": [0, 0, 205],
+    "mediumorchid": [186, 85, 211],
+    "mediumpurple": [147, 112, 219],
+    "mediumseagreen": [60, 179, 113],
+    "mediumslateblue": [123, 104, 238],
+    "mediumspringgreen": [0, 250, 154],
+    "mediumturquoise": [72, 209, 204],
+    "mediumvioletred": [199, 21, 133],
+    "midnightblue": [25, 25, 112],
+    "mintcream": [245, 255, 250],
+    "mistyrose": [255, 228, 225],
+    "moccasin": [255, 228, 181],
+    "navajowhite": [255, 222, 173],
+    "navy": [0, 0, 128],
+    "oldlace": [253, 245, 230],
+    "olive": [128, 128, 0],
+    "olivedrab": [107, 142, 35],
+    "orange": [255, 165, 0],
+    "orangered": [255, 69, 0],
+    "orchid": [218, 112, 214],
+    "palegoldenrod": [238, 232, 170],
+    "palegreen": [152, 251, 152],
+    "paleturquoise": [175, 238, 238],
+    "palevioletred": [219, 112, 147],
+    "papayawhip": [255, 239, 213],
+    "peachpuff": [255, 218, 185],
+    "peru": [205, 133, 63],
+    "pink": [255, 192, 203],
+    "plum": [221, 160, 221],
+    "powderblue": [176, 224, 230],
+    "purple": [128, 0, 128],
+    "rebeccapurple": [102, 51, 153],
+    "red": [255, 0, 0],
+    "rosybrown": [188, 143, 143],
+    "royalblue": [65, 105, 225],
+    "saddlebrown": [139, 69, 19],
+    "salmon": [250, 128, 114],
+    "sandybrown": [244, 164, 96],
+    "seagreen": [46, 139, 87],
+    "seashell": [255, 245, 238],
+    "sienna": [160, 82, 45],
+    "silver": [192, 192, 192],
+    "skyblue": [135, 206, 235],
+    "slateblue": [106, 90, 205],
+    "slategray": [112, 128, 144],
+    "slategrey": [112, 128, 144],
+    "snow": [255, 250, 250],
+    "springgreen": [0, 255, 127],
+    "steelblue": [70, 130, 180],
+    "tan": [210, 180, 140],
+    "teal": [0, 128, 128],
+    "thistle": [216, 191, 216],
+    "tomato": [255, 99, 71],
+    "turquoise": [64, 224, 208],
+    "violet": [238, 130, 238],
+    "wheat": [245, 222, 179],
+    "white": [255, 255, 255],
+    "whitesmoke": [245, 245, 245],
+    "yellow": [255, 255, 0],
+    "yellowgreen": [154, 205, 50]
+};
+
+// NOTE: conversions should only return primitive values (i.e. arrays, or
+//       values that give correct `typeof` results).
+//       do not use box values types (i.e. Number(), String(), etc.)
+
+const reverseKeywords = {};
+for (const key of Object.keys(cssKeywords)) {
+    reverseKeywords[cssKeywords[key]] = key;
+}
 
