@@ -1,4 +1,4 @@
-const Version = "2.0.12" //vom 7.10.2021 - Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
+const Version = "2.0.12" //vom 14.10.2021 - Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
 
 log("starting LightControl V." + Version);
 
@@ -9,8 +9,8 @@ const PresenceCountDp = "radar2.0._nHere"; // Datenpunkt für Anwesenheitszähle
 const logging = false; // Logging an/aus
 const RampSteps = 10; //Wieviele Schritte zum dimmen? Bitte nicht zu hoch setzen, wird zwar smoother, kann aber zu timing Problemen führen wenn gleichzeitig eine kurze Zeit in den Objekten gewählt.
 
-const minCt = 2700; //Regelbereich für Farbtemperatur
-const maxCt = 6500;//Regelbereich für Farbtemperatur
+const minCt = 2700; //Regelbereich für Farbtemperatur in Kelvin
+const maxCt = 6500;//Regelbereich für Farbtemperatur in Kelvin
 
 const LightGroups = {
     0: {
@@ -54,9 +54,9 @@ const LightGroups = {
             }
         },
         sensors: {
-            0: { id: 'linkeddevices.0.Bewegungsmelder.Flur_EG.0.IsMotion' },
-            1: { id: 'linkeddevices.0.Bewegungsmelder.Flur_EG.1.IsMotion' },
-            2: { id: 'linkeddevices.0.Bewegungsmelder.Flur_EG.2.IsMotion' }
+            0: { id: 'linkeddevices.0.Bewegungsmelder.Flur_EG.0.IsMotion', motionVal: true, noMotionVal: false },
+            1: { id: 'linkeddevices.0.Bewegungsmelder.Flur_EG.1.IsMotion', motionVal: true, noMotionVal: false },
+            2: { id: 'linkeddevices.0.Bewegungsmelder.Flur_EG.2.IsMotion', motionVal: true, noMotionVal: false }
         }
     },
     1: {
@@ -172,7 +172,7 @@ const LightGroups = {
             }
         },
         sensors: {
-            0: { id: 'linkeddevices.0.Bewegungsmelder.Toilette.IsMotion' }
+            0: { id: 'linkeddevices.0.Bewegungsmelder.Toilette.IsMotion', motionVal: true, noMotionVal: false }
         }
     },
     3: {
@@ -208,8 +208,8 @@ const LightGroups = {
 
         },
         sensors: {
-            0: { id: 'linkeddevices.0.Bewegungsmelder.Flur_Og1.0.IsMotion' },
-            1: { id: 'linkeddevices.0.Bewegungsmelder.Flur_Og1.1.IsMotion' }
+            0: { id: 'linkeddevices.0.Bewegungsmelder.Flur_Og1.0.IsMotion', motionVal: true, noMotionVal: false },
+            1: { id: 'linkeddevices.0.Bewegungsmelder.Flur_Og1.1.IsMotion', motionVal: true, noMotionVal: false }
         }
     },
     4: {
@@ -226,7 +226,7 @@ const LightGroups = {
             }
         },
         sensors: {
-            0: { id: 'linkeddevices.0.Bewegungsmelder.Bad.0.IsMotion' }
+            0: { id: 'linkeddevices.0.Bewegungsmelder.Bad.0.IsMotion', motionVal: true, noMotionVal: false }
         }
     },
     5: {
@@ -295,7 +295,7 @@ const LightGroups = {
             }
         },
         sensors: {
-            0: { id: 'linkeddevices.0.Bewegungsmelder.Kueche.0.IsMotion' }
+            0: { id: 'linkeddevices.0.Bewegungsmelder.Kueche.0.IsMotion', motionVal: true, noMotionVal: false }
         }
     },
     8: {
@@ -312,7 +312,7 @@ const LightGroups = {
             }
         },
         sensors: {
-            0: { id: 'zigbee.0.00158d00042ae926.opened'/*Is open*/ }
+            0: { id: 'zigbee.0.00158d00042ae926.opened', motionVal: true, noMotionVal: false }
         }
     },
     9: {
@@ -346,7 +346,7 @@ const LightGroups = {
             }
         },
         sensors: {
-            0: { id: 'linkeddevices.0.Bewegungsmelder.Schlafzimmer_C.0.IsMotion' }
+            0: { id: 'linkeddevices.0.Bewegungsmelder.Schlafzimmer_C.0.IsMotion', motionVal: true, noMotionVal: false }
         }
     }
 
@@ -427,7 +427,7 @@ const GroupTemplate = {
     },
     blink: {
         enabled: { id: "", common: { read: true, write: true, name: "Blinking enabled?", type: "boolean", role: "button.start", def: false } },
-        frequency: { id: "", common: { read: true, write: true, name: "Blink frequency in seconds", type: "number", role: "level", def: 1, min: 1, unit: "hz" } },
+        frequency: { id: "", common: { read: true, write: true, name: "Blink frequency in seconds", type: "number", role: "level", def: 1, min: 1, unit: "sek" } },
         blinks: { id: "", common: { read: true, write: true, name: "How many blinks at activation?", type: "number", role: "level", def: 3, min: 1 } }
     }
 }
@@ -501,7 +501,7 @@ async function init() {
                         //  log("Setting Trigger for: " + GroupTemplate[prop1][z].id)
 
                         on({ id: GroupTemplate[prop1][z].id, change: "any", ack: false }, function (dp) { //Trigger erstellen
-                          if (logging)  log("Triggered " + dp.id + " new value is " + dp.state.val)
+                            if (logging) log("Triggered " + dp.id + " new value is " + dp.state.val)
                             LightGroups[Group][prop1][z] = dp.state.val;
                             Controller(Group, prop1 + "." + z, dp.oldState.val, dp.state.val);
                         });
@@ -684,12 +684,20 @@ async function DoAllTheSensorThings(Group) {
     if (logging) log("Reaching DoAllTheSensorThings");
 
     for (let sensorCount in LightGroups[Group].sensors) {
-        LightGroups[Group].sensors[sensorCount].isMotion = (await getStateAsync(LightGroups[Group].sensors[sensorCount].id)).val; //Inhalt lesen und neues Property anlegen und füllen
+        if ((await getStateAsync(LightGroups[Group].sensors[sensorCount].id)).val == LightGroups[Group].sensors[sensorCount].motionVal) {//Inhalt lesen und neues Property anlegen und füllen
+            LightGroups[Group].sensors[sensorCount].isMotion = true; 
+        } else {
+            LightGroups[Group].sensors[sensorCount].isMotion = false; 
+        };
         //Trigger für Dp Inhalt erzeugen wenn nicht leer
         if (LightGroups[Group].sensors[sensorCount].id != "") {
             on({ id: LightGroups[Group].sensors[sensorCount].id, change: "any", ack: true }, function (dp) { //Trigger erstellen für eingetragenen Sensor
                 if (logging) log("Triggered linked Sensor " + dp.id + " new value is " + dp.state.val);
-                LightGroups[Group].sensors[sensorCount].isMotion = dp.state.val;
+                if (dp.state.val == LightGroups[Group].sensors[sensorCount].motionVal) {//Inhalt lesen und neues Property anlegen und füllen
+                    LightGroups[Group].sensors[sensorCount].isMotion = true; 
+                } else {
+                    LightGroups[Group].sensors[sensorCount].isMotion = false;
+                };
                 SummarizeSensors(Group);
             });
         } else {
@@ -785,10 +793,10 @@ function ConvertKelvin(MinVal, MaxVal, Ct) {
     // log("KelvinRange=" + KelvinRange + " ValRange=" + ValRange + " Ct=" + Ct)
     let KelvinProz = (Ct - minCt) / (KelvinRange / 100) //Prozent des aktuellen Kelvinwertes
     let ValProz = ValRange / 100 //1% des Value Wertebereichs
-    let KonvertedCt = Math.round(ValProz * KelvinProz + MinVal)
-    //  log("KonvertedCt=" + KonvertedCt + " KelvinProz=" + KelvinProz + " ValProz=" + ValProz)
+    let ConvertedCt = Math.round(ValProz * KelvinProz + MinVal)
+    //  log("ConvertedCt=" + ConvertedCt + " KelvinProz=" + KelvinProz + " ValProz=" + ValProz)
 
-    return KonvertedCt;
+    return ConvertedCt;
 }
 
 function AdaptiveCt() {
@@ -889,7 +897,7 @@ async function SetColorMode(Group) {
 
 async function SetColor(Group, Color) {
     log("Reaching SetColor for Group " + Group + " power=" + LightGroups[Group].power);
-    let rgbTemp= ConvertHexToRgb(Color);
+    let rgbTemp = ConvertHexToRgb(Color);
     if (LightGroups[Group].power) {
         for (let Light in LightGroups[Group].lights) { //Alle Lampen der Gruppe durchgehen
             if (LightGroups[Group].lights[Light].color.oid != "") { //Prüfen ob Datenpunkt für Color vorhanden
@@ -1061,7 +1069,7 @@ async function GroupPowerCleaningLightOnOff(Group, OnOff) {
             await setStateAsync(LightGroups[Group].lights[Light].power.oid, LightGroups[Group].lights[Light].power.onVal);
             log("Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff);
         };
-        SetBrightness(Group, 100);
+        await SetBrightness(Group, 100);
     } else {
         for (let Light in LightGroups[Group].lights) {
             await setStateAsync(LightGroups[Group].lights[Light].power.oid, LightGroups[Group].lights[Light].power.offVal);
@@ -1144,21 +1152,35 @@ async function AutoOnPresenceIncrease() {
 
 async function blink(Group) {
     let loopcount = 0;
+
+    if (!LightGroups[Group].power) { //Wenn Gruppe aus, anschalten
+
+    }
     clearBlinkIntervals(Group);
     BlinkIntervalObj[Group] = setInterval(function () { // Wenn 
         loopcount++;
 
         if (loopcount <= LightGroups[Group].blink.blinks * 2) {
             if (loopcount / 2 == Math.round(loopcount / 2)) {
-                log("aus " + loopcount)
+                log("aus " + loopcount);
+                for (let Light in LightGroups[Group].lights) {
+                    setStateAsync(LightGroups[Group].lights[Light].power.oid, LightGroups[Group].lights[Light].power.offVal);
+                    log("Blink Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: off");
+                };
+
             } else {
-                log("an " + loopcount)
+                log("an " + loopcount);
+                for (let Light in LightGroups[Group].lights) {
+                    setStateAsync(LightGroups[Group].lights[Light].power.oid, LightGroups[Group].lights[Light].power.onVal);
+                    log("Blink Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: on");
+                };
+
             };
         } else {
             clearBlinkIntervals(Group);
         };
 
-    }, LightGroups[Group].blink.frequency / 2 * 1000);
+    }, LightGroups[Group].blink.frequency * 1000);
 }
 
 /* ------------------------- FUNCTIONS FOR Switching Off --------------------------------- */
@@ -1225,12 +1247,12 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
             AdaptiveBri(Group);
             break;
         case "isMotion":
-            if (LightGroups[Group].autoOffTimed.noAutoOffWhenMotionMode == 0 && NewVal && LightGroups[Group].power) { //AutoOff Timer wird bei jeder Bewegung neugestartet
-                log("Motion detected, restarting AutoOff Timer");
-                AutoOffTimed(Group);
-            } ;
 
             LightGroups[Group].isMotion = NewVal;
+            if (LightGroups[Group].autoOffTimed.noAutoOffWhenMotionMode == 0 && NewVal && LightGroups[Group].power) { //AutoOff Timer wird bei Mode 0 nach jeder Bewegung neugestartet
+                log("Motion detected, restarting AutoOff Timer");
+                AutoOffTimed(Group);
+            };
 
 
             AutoOnMotion(Group);
@@ -1298,11 +1320,15 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
             GroupPowerCleaningLightOnOff(Group, NewVal);
             break;
         case "adaptiveBri":
+            AdaptiveBri(Group);
             break;
         case "adaptiveCt":
             await SetCt(Group);
             break;
         case "adaptiveCtMode":
+            break;
+        case "blink.blinks":
+        case "blink.frequency":
             break;
         case "blink.enabled":
             blink(Group);
