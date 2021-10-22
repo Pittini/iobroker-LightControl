@@ -1,4 +1,4 @@
-const Version = "2.0.12" //vom 14.10.2021 - Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
+const Version = "2.0.12" //vom 22.10.2021 - Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
 
 log("starting LightControl V." + Version);
 
@@ -159,7 +159,6 @@ const LightGroups = {
     },
     2: {
         description: "Klo",
-
         lights: {
             0: {
                 description: "Deckenlampe",
@@ -384,7 +383,6 @@ const GroupTemplate = {
     autoOffTimed: {
         enabled: { id: "", common: { read: true, write: true, name: "Timecontrolled auto off enabled?", type: "boolean", role: "switch.enable", def: false } },
         autoOffTime: { id: "", common: { read: true, write: true, name: "Time until auto off", type: "number", role: "level.timer", def: 120, min: 0, unit: "sek" } },
-        noAutoOffWhenMotionMode: { id: "", common: { read: true, write: true, name: "Mode for no AutoOffWhenMotion", type: "number", role: "state", def: 0, states: { 0: "restart at every motion", 1: "check motion at end of time" } } },
         noAutoOffWhenMotion: { id: "", common: { read: true, write: true, name: "No timed auto off if motion detected", type: "boolean", role: "switch", def: true } }
     },
     autoOffLux: {
@@ -685,16 +683,16 @@ async function DoAllTheSensorThings(Group) {
 
     for (let sensorCount in LightGroups[Group].sensors) {
         if ((await getStateAsync(LightGroups[Group].sensors[sensorCount].id)).val == LightGroups[Group].sensors[sensorCount].motionVal) {//Inhalt lesen und neues Property anlegen und füllen
-            LightGroups[Group].sensors[sensorCount].isMotion = true; 
+            LightGroups[Group].sensors[sensorCount].isMotion = true;
         } else {
-            LightGroups[Group].sensors[sensorCount].isMotion = false; 
+            LightGroups[Group].sensors[sensorCount].isMotion = false;
         };
         //Trigger für Dp Inhalt erzeugen wenn nicht leer
         if (LightGroups[Group].sensors[sensorCount].id != "") {
             on({ id: LightGroups[Group].sensors[sensorCount].id, change: "any", ack: true }, function (dp) { //Trigger erstellen für eingetragenen Sensor
                 if (logging) log("Triggered linked Sensor " + dp.id + " new value is " + dp.state.val);
                 if (dp.state.val == LightGroups[Group].sensors[sensorCount].motionVal) {//Inhalt lesen und neues Property anlegen und füllen
-                    LightGroups[Group].sensors[sensorCount].isMotion = true; 
+                    LightGroups[Group].sensors[sensorCount].isMotion = true;
                 } else {
                     LightGroups[Group].sensors[sensorCount].isMotion = false;
                 };
@@ -747,7 +745,7 @@ function AdaptiveBri(Group) {
         } else if (LightGroups[Group].actualLux >= 10000) {
             TempBri = 100;
         } else if (LightGroups[Group].actualLux > 0 && LightGroups[Group].actualLux < 10000) {
-            TempBri = LightGroups[Group].actualLux / 100
+            TempBri = LightGroups[Group].actualLux / 100;
             if (TempBri < MinBri) TempBri = MinBri;
         };
         SetBrightness(Group, Math.round(TempBri));
@@ -1212,16 +1210,16 @@ async function AutoOffLux(Group) {//Handling für AutoOffLux
 
 }
 
-function AutoOffTimed(Group) {
+async function AutoOffTimed(Group) {
     if (logging) log("Reaching AutoOffTimed for Group " + Group + " set time=" + LightGroups[Group].autoOffTimed.autoOffTime + " LightGroups[Group].isMotion=" + LightGroups[Group].isMotion + " LightGroups[Group].autoOffTimed.noAutoOffWhenMotion=" + LightGroups[Group].autoOffTimed.noAutoOffWhenMotion)
     if (LightGroups[Group].autoOffTimed.enabled) {
-        clearAutoOffTimeout(Group);
+        await clearAutoOffTimeout(Group);
         AutoOffTimeoutObject[Group] = setTimeout(function () { // Interval starten
             if (LightGroups[Group].autoOffTimed.noAutoOffWhenMotion && LightGroups[Group].isMotion) { //Wenn noAutoOffWhenmotion aktiv und Bewegung erkannt
-                log("Motion detected, restarting Timeout");
+                log("AutoOffTimed: Motion detected, restarting Timeout for Group " + Group + " set time=" + LightGroups[Group].autoOffTimed.autoOffTime);
                 AutoOffTimed(Group);// TimeOut neustarten
             } else {
-                log("Group " + Group + " timed out, switching off. Motion=" + LightGroups[Group].isMotion);
+                log("AutoOffTimed: Group " + Group + " timed out, switching off. Motion=" + LightGroups[Group].isMotion);
                 GroupPowerOnOff(Group, false);
             };
         }, Math.round(LightGroups[Group].autoOffTimed.autoOffTime) * 1000); //
@@ -1247,13 +1245,11 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
             AdaptiveBri(Group);
             break;
         case "isMotion":
-
             LightGroups[Group].isMotion = NewVal;
-            if (LightGroups[Group].autoOffTimed.noAutoOffWhenMotionMode == 0 && NewVal && LightGroups[Group].power) { //AutoOff Timer wird bei Mode 0 nach jeder Bewegung neugestartet
-                log("Motion detected, restarting AutoOff Timer");
+            if (LightGroups[Group].isMotion && LightGroups[Group].power) { //AutoOff Timer wird nach jeder Bewegung neugestartet
+                log("Controller: Motion detected, restarting AutoOff Timer for Group " + Group);
                 AutoOffTimed(Group);
             };
-
 
             AutoOnMotion(Group);
             break;
@@ -1307,13 +1303,18 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
             break;
         case "power":
             if (NewVal != OldVal) await GroupPowerOnOff(Group, NewVal); //Alles schalten
-            if (!LightGroups[Group].rampOn.enabled && NewVal) await SetBrightness(Group, LightGroups[Group].bri); //Wenn kein RampOn Helligkeit direkt setzen
+            if (!LightGroups[Group].rampOn.enabled && NewVal) {//Wenn kein RampOn Helligkeit direkt setzen
+                if (LightGroups[Group].adaptiveBri) { //Bei aktiviertem AdaptiveBri
+                    await AdaptiveBri(Group);
+                } else {
+                    await SetBrightness(Group, LightGroups[Group].bri);
+                };
+            };
             if (NewVal) {
                 await SetColor(Group, LightGroups[Group].color);//Nach anschalten Color setzen
                 if (LightGroups[Group].color == "#FFFFFF") await SetWhiteSubstituteColor(Group);
                 await SetColorMode(Group); //Nach anschalten Colormode setzen
                 if (LightGroups[Group].color == "#FFFFFF") await SetCt(Group);//Nach anschalten Ct setzen
-
             };
             break;
         case "powerCleaningLight":
