@@ -1,4 +1,4 @@
-const Version = "2.0.12" //vom 22.10.2021 - Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
+const Version = "2.0.13" //vom 1.11.2021 - Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
 
 log("starting LightControl V." + Version);
 
@@ -328,7 +328,7 @@ const LightGroups = {
             }
         },
         sensors: {
-
+            0: { id: 'linkeddevices.0.Magnetkontakt.Flur_Eg.Haustuer.opened', motionVal: true, noMotionVal: false }
         }
     },
     10: {
@@ -426,7 +426,9 @@ const GroupTemplate = {
     blink: {
         enabled: { id: "", common: { read: true, write: true, name: "Blinking enabled?", type: "boolean", role: "button.start", def: false } },
         frequency: { id: "", common: { read: true, write: true, name: "Blink frequency in seconds", type: "number", role: "level", def: 1, min: 1, unit: "sek" } },
-        blinks: { id: "", common: { read: true, write: true, name: "How many blinks at activation?", type: "number", role: "level", def: 3, min: 1 } }
+        blinks: { id: "", common: { read: true, write: true, name: "How many blinks at activation?", type: "number", role: "level", def: 3, min: 1 } },
+        bri: { id: "", common: { read: true, write: true, name: "Brightness of lights when blinking, if empty using groupstandard", type: "number", role: "level.brightness", def: 100, max: 100, min: 0, unit: "%" } },
+        color: { id: "", common: { read: true, write: true, name: "Color of lights when blinking, if empty using groupstandard", type: "string", role: "level.color.rgb", def: "#FF0000" } }
     }
 }
 
@@ -436,7 +438,7 @@ async function GlobalLuxHandling() {
     // Globale Luxwerte holen und Trigger setzen
     if (LuxSensor != "") {
         ActualGenericLux = (await getStateAsync(LuxSensor)).val;
-        log("ActualGenericLux=" + ActualGenericLux)
+        //  log("ActualGenericLux=" + ActualGenericLux)
         on({ id: LuxSensor, change: "ne", ack: true }, function (dp) { //Trigger erstellen, außer Dp ist readonly
             if (logging) log("Triggered Luxsensor " + LuxSensor + " new value is " + dp.state.val);
             ActualGenericLux = dp.state.val;
@@ -487,10 +489,10 @@ async function init() {
                     GroupTemplate[prop1][z].id = praefix + "." + Group + "." + prop1 + "." + z;
                     if (!await existsStateAsync(GroupTemplate[prop1][z].id)) {// Prüfen ob state noch nicht vorhanden
                         await createStateAsync(GroupTemplate[prop1][z].id, GroupTemplate[prop1][z].common);//State anlegen
-                        log("Created datapoint " + GroupTemplate[prop1][z].id);
+                        log("Init: Created datapoint " + GroupTemplate[prop1][z].id);
                         DpCount++;
                     } else {
-                        if (logging) log("Datapoint " + GroupTemplate[prop1][z].id + " still exists, skipping creation and reading data");
+                        if (logging) log("Init: Datapoint " + GroupTemplate[prop1][z].id + " still exists, skipping creation and reading data");
                     };
 
                     LightGroups[Group][prop1][z] = (await getStateAsync(GroupTemplate[prop1][z].id)).val; //Daten in Lightgroups einlesen (auch wenn neu erzeugt), dann
@@ -508,31 +510,31 @@ async function init() {
 
                 if (!await existsObjectAsync(praefix + "." + Group + "." + prop1)) { // Channel erstellen wenn noch nicht vorhanden
                     await setObjectAsync(praefix + "." + Group + "." + prop1, { type: 'channel', common: { name: LightGroups[Group].description + " " + prop1 }, native: {} });
-                    log("Subchannel " + praefix + "." + Group + "." + prop1 + " created");
+                    log("Init: Subchannel " + praefix + "." + Group + "." + prop1 + " created");
                 };
 
             } else {
                 GroupTemplate[prop1].id = praefix + "." + Group + "." + prop1;
                 if (!await existsStateAsync(GroupTemplate[prop1].id)) { // Prüfen ob state noch nicht vorhanden
                     await createStateAsync(GroupTemplate[prop1].id, GroupTemplate[prop1].common); //State anlegen
-                    log("Created datapoint " + GroupTemplate[prop1].id);
+                    log("Init: Created datapoint " + GroupTemplate[prop1].id);
                     DpCount++;
                 } else {
-                    if (logging) log("Datapoint " + GroupTemplate[prop1].id + " still exists, skipping creation and reading data");
+                    if (logging) log("Init:Datapoint " + GroupTemplate[prop1].id + " still exists, skipping creation and reading data");
                 };
 
                 LightGroups[Group][prop1] = (await getStateAsync(GroupTemplate[prop1].id)).val; //Daten in Lightgroups einlesen (auch wenn neu erzeugt), dann
                 //  log("LightGroups[" + Group + "][" + prop1 + "]=" + LightGroups[Group][prop1])
-                if (logging) log("Read data from:" + praefix + "." + Group + "." + prop1 + ", value is " + LightGroups[Group][prop1]);
+                if (logging) log("Init: Read data from:" + praefix + "." + Group + "." + prop1 + ", value is " + LightGroups[Group][prop1]);
 
                 //LuxGroupsensor Handling
                 if (prop1 == "luxSensorOid") await DoAllTheLuxSensorThings(Group, prop1);
 
 
                 if (GroupTemplate[prop1].common.write) { //Trigger für alle Template Dps erstellen, außer Dp ist readonly
-                    //  log("Setting Trigger for: " + GroupTemplate[prop1].id)
+                    //  log("Init: Setting Trigger for: " + GroupTemplate[prop1].id)
                     on({ id: GroupTemplate[prop1].id, change: "any", ack: false }, function (dp) {
-                        // log("Triggered " + dp.id + " new value is " + dp.state.val);
+                        // log("Init: Triggered " + dp.id + " new value is " + dp.state.val);
                         LightGroups[Group][prop1] = dp.state.val;
                         // if (prop1 == "luxSensorOid") ChangeLuxSensorTrigger(Group, prop1, dp.oldState.val, dp.state.val);
                         Controller(Group, prop1, dp.oldState.val, dp.state.val);
@@ -543,38 +545,41 @@ async function init() {
 
         if (!await existsObjectAsync(praefix + "." + Group)) { //Gruppenchannel anlegen wenn noch nicht vorhanden
             await setObjectAsync(praefix + "." + Group, { type: 'channel', common: { name: LightGroups[Group].description }, native: {} });
-            log("Channel " + praefix + "." + Group + " created");
+            log("Init: Channel " + praefix + "." + Group + " created");
         };
 
         //  await setStateAsync(praefix + "." + Group + ".autoOnLux.dailyLock", false, true);
         // await setStateAsync(praefix + "." + Group + ".autoOffLux.dailyLock", false, true);
-
+        LightGroups[Group].autoOnLux.dailyLockCounter = 0;
+        LightGroups[Group].autoOffLux.dailyLockCounter = 0;
     };
-    log("Created " + DpCount + " Datapoints");
+    log("Init: Created " + DpCount + " Datapoints");
     //log(LightGroups)
+
 
     onStop(function () { //Bei Scriptende alle Intervalle und Timeouts löschen
         clearRampOnIntervals(null);
         clearRampOffIntervals(null);
         clearBlinkIntervals(null);
+        clearAutoOffTimeouts(null);
         clearInterval(TickerIntervalObj);
     }, 10);
     return true;
 }
 
-function clearRampOnIntervals(Group) {
+async function clearRampOnIntervals(Group) {
     // log("Reaching ClearRampOnInterval(Group) Group=" + Group);
     if (Group == null) {
         for (let x in LightGroups) {
             if (typeof RampOnIntervalObject[x] == "object") {
                 if (logging) log("RampOnInterval for Group=" + x + " deleted.");
-                clearInterval(RampOnIntervalObject[x]);
+                await clearInterval(RampOnIntervalObject[x]);
             };
         };
     } else {
         if (typeof RampOnIntervalObject[Group] == "object") {
             if (logging) log("RampOnInterval for Group=" + Group + " deleted.");
-            clearInterval(RampOnIntervalObject[Group]);
+            await clearInterval(RampOnIntervalObject[Group]);
         };
     };
 }
@@ -596,19 +601,19 @@ function clearRampOffIntervals(Group) {
     };
 }
 
-function clearAutoOffTimeout(Group) {
+async function clearAutoOffTimeouts(Group) {
     //  log("Reaching clearAutoOffTimeout(Group) Group=" + Group);
     if (Group == null) {
         for (let x in LightGroups) {
             if (typeof AutoOffTimeoutObject[x] == "object") {
-                if (logging) log("AutoOffTimeout for Group=" + x + " deleted.");
-                clearInterval(AutoOffTimeoutObject[x]);
+                if (logging) log("clearAutoOffTimeout: AutoOffTimeout for Group=" + x + " deleted.");
+                await clearInterval(AutoOffTimeoutObject[x]);
             };
         };
     } else {
         if (typeof AutoOffTimeoutObject[Group] == "object") {
-            if (logging) log("Timeout for Group=" + Group + " deleted.");
-            clearInterval(AutoOffTimeoutObject[Group]);
+            if (logging) log("clearAutoOffTimeout: Timeout for Group=" + Group + " deleted.");
+            await clearInterval(AutoOffTimeoutObject[Group]);
         };
     };
 }
@@ -689,7 +694,7 @@ async function DoAllTheSensorThings(Group) {
         };
         //Trigger für Dp Inhalt erzeugen wenn nicht leer
         if (LightGroups[Group].sensors[sensorCount].id != "") {
-            on({ id: LightGroups[Group].sensors[sensorCount].id, change: "any", ack: true }, function (dp) { //Trigger erstellen für eingetragenen Sensor
+            on({ id: LightGroups[Group].sensors[sensorCount].id, change: "ne", ack: true }, function (dp) { //Trigger erstellen für eingetragenen Sensor
                 if (logging) log("Triggered linked Sensor " + dp.id + " new value is " + dp.state.val);
                 if (dp.state.val == LightGroups[Group].sensors[sensorCount].motionVal) {//Inhalt lesen und neues Property anlegen und füllen
                     LightGroups[Group].sensors[sensorCount].isMotion = true;
@@ -703,6 +708,7 @@ async function DoAllTheSensorThings(Group) {
         };
     };
 }
+
 function SummarizeSensors(Group) {
     if (logging) log("Reaching SummarizeSensors, Group=" + Group);
     let Motionstate = false;
@@ -857,7 +863,7 @@ async function SetWhiteSubstituteColor(Group) {
     if (LightGroups[Group].power && LightGroups[Group].color.toUpperCase() == "#FFFFFF") { //Nur ausführen bei anschalten und Farbe weiß
         // log("anschalten und Farbe weiß")
         if (LightGroups[Group].ct < ((maxCt - minCt) / 4 + minCt) || LightGroups[Group].ct > ((maxCt - minCt) / 4 * 3 + minCt)) { //Ct Regelbereich vierteln, erstes viertel ist ww, 2tes und drittes wieder kw, das letzte ww
-            log("Warmweiss - ct=" + LightGroups[Group].ct + " (maxCt - minCt) / 4 + minCt=" + ((maxCt - minCt) / 4 + minCt) + " (maxCt - minCt) / 4 * 3 + minCt=" + ((maxCt - minCt) / 4 * 3 + minCt))
+            //  log("Warmweiss - ct=" + LightGroups[Group].ct + " (maxCt - minCt) / 4 + minCt=" + ((maxCt - minCt) / 4 + minCt) + " (maxCt - minCt) / 4 * 3 + minCt=" + ((maxCt - minCt) / 4 * 3 + minCt))
             for (let Light in LightGroups[Group].lights) {
                 if (LightGroups[Group].lights[Light].ct.oid == "" && LightGroups[Group].lights[Light].color.oid != "" && LightGroups[Group].lights[Light].color.warmWhiteColor != "" && LightGroups[Group].lights[Light].color.dayLightColor != "") {
                     await setStateAsync(LightGroups[Group].lights[Light].color.oid, LightGroups[Group].lights[Light].color.warmWhiteColor, false);
@@ -865,7 +871,7 @@ async function SetWhiteSubstituteColor(Group) {
                 };
             };
         } else { //Hier kw
-            log("Kaltweiss")
+            //  log("Kaltweiss")
             for (let Light in LightGroups[Group].lights) {
                 if (LightGroups[Group].lights[Light].ct.oid == "" && LightGroups[Group].lights[Light].color.oid != "" && LightGroups[Group].lights[Light].color.warmWhiteColor != "" && LightGroups[Group].lights[Light].color.dayLightColor != "") {
                     await setStateAsync(LightGroups[Group].lights[Light].color.oid, LightGroups[Group].lights[Light].color.dayLightColor, false);
@@ -894,13 +900,13 @@ async function SetColorMode(Group) {
 }
 
 async function SetColor(Group, Color) {
-    log("Reaching SetColor for Group " + Group + " power=" + LightGroups[Group].power);
+    log("Reaching SetColor for Group " + Group + " power=" + LightGroups[Group].power + " Color=" + Color);
     let rgbTemp = ConvertHexToRgb(Color);
     if (LightGroups[Group].power) {
         for (let Light in LightGroups[Group].lights) { //Alle Lampen der Gruppe durchgehen
             if (LightGroups[Group].lights[Light].color.oid != "") { //Prüfen ob Datenpunkt für Color vorhanden
 
-                log("LightGroups[Group].lights[Light].color.type=" + LightGroups[Group].lights[Light].color.type)
+                log("SetColor: LightGroups[Group].lights[Light].color.type=" + LightGroups[Group].lights[Light].color.type)
                 switch (LightGroups[Group].lights[Light].color.type) {
                     case "hex": //Keine Konvertierung nötig
                         await setStateAsync(LightGroups[Group].lights[Light].color.oid, Color, false);
@@ -912,7 +918,7 @@ async function SetColor(Group, Color) {
                         await setStateAsync(LightGroups[Group].lights[Light].color.oid, ConvertRgbToXy(rgbTemp), false);
                         break;
                     default:
-                        log("Unknown colortype, please specify", "warn");
+                        log("SetColor: Unknown colortype, please specify", "warn");
                 };
             };
         };
@@ -924,28 +930,28 @@ async function SetColor(Group, Color) {
 /* ------------------------- FUNCTIONS FOR Switching On/Off --------------------------------- */
 
 async function GroupPowerOnOff(Group, OnOff) {
-    log("Reaching GroupPowerOnOff for Group " + Group + ", OnOff=" + OnOff + " rampOn=" + LightGroups[Group].rampOn.enabled + " - " + JSON.stringify(LightGroups[Group].rampOn) + " rampOff=" + LightGroups[Group].rampOff.enabled + " - " + JSON.stringify(LightGroups[Group].rampOff));
+    log("Reaching GroupPowerOnOff for Group " + Group + " (" + LightGroups[Group].description + "), OnOff=" + OnOff + " rampOn=" + LightGroups[Group].rampOn.enabled + " - " + JSON.stringify(LightGroups[Group].rampOn) + " rampOff=" + LightGroups[Group].rampOff.enabled + " - " + JSON.stringify(LightGroups[Group].rampOff));
     let LoopCount = 0;
 
     //Normales schalten ohne Ramping
     if (OnOff && !LightGroups[Group].rampOn.enabled) { //Anschalten
-        log("Normales anschalten ohne Ramping für " + LightGroups[Group].description);
+        log("GroupPowerOnOff: Normales anschalten ohne Ramping für " + LightGroups[Group].description);
         for (let Light in LightGroups[Group].lights) {
             await setStateAsync(LightGroups[Group].lights[Light].power.oid, LightGroups[Group].lights[Light].power.onVal);
-            log("A Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff);
+            log("GroupPowerOnOff: A Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff);
         };
         if (LightGroups[Group].autoOffTimed.enabled) { //Wenn Zeitabschaltung aktiv und Anschaltung, AutoOff aktivieren
             AutoOffTimed(Group); //
         };
 
     } else if (!OnOff && !LightGroups[Group].rampOff.enabled) { //Ausschalten
-        log("Normales ausschalten ohne Ramping für " + LightGroups[Group].description);
+        log("GroupPowerOnOff: Normales ausschalten ohne Ramping für " + LightGroups[Group].description);
         if (LightGroups[Group].rampOn.enabled) {//Vor dem ausschalten Helligkeit auf 2 (0+1 wird bei manchchen Devices als aus gewertet) um bei rampon nicht mit voller Pulle zu starten
             await setDeviceBri(Group, 2);
         }
         for (let Light in LightGroups[Group].lights) {
             await setStateAsync(LightGroups[Group].lights[Light].power.oid, LightGroups[Group].lights[Light].power.offVal);
-            log("B Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff);
+            log("GroupPowerOnOff: B Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff);
         };
     };
 
@@ -955,10 +961,10 @@ async function GroupPowerOnOff(Group, OnOff) {
         for (let Light in LightGroups[Group].lights) { //Alles anschalten wo
             if (LightGroups[Group].lights[Light].bri.oid != "") { //bri nicht leer
                 await setStateAsync(LightGroups[Group].lights[Light].power.oid, LightGroups[Group].lights[Light].power.onVal);
-                log("Ca Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff + " now setting brightness");
+                log("GroupPowerOnOff: Ca Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff + " now setting brightness");
             };
         };
-        clearInterval(RampOnIntervalObject[Group]);
+        if (typeof RampOnIntervalObject[Group] == "object") clearInterval(RampOnIntervalObject[Group]);
         RampOnIntervalObject[Group] = setInterval(function () { // Interval starten
             LoopCount++;
             //  SetBrightness(Group, Math.round(RampSteps * LoopCount * (LightGroups[Group].bri / 100)));
@@ -968,25 +974,24 @@ async function GroupPowerOnOff(Group, OnOff) {
                 for (let Light in LightGroups[Group].lights) { //Alles anschalten wo
                     if (LightGroups[Group].lights[Light].bri.oid == "") { //bri leer
                         setStateAsync(LightGroups[Group].lights[Light].power.oid, LightGroups[Group].lights[Light].power.onVal);
-                        log("Cb Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff);
+                        log("GroupPowerOnOff: Cb Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff);
                     };
                 };
                 if (LightGroups[Group].autoOffTimed.enabled) { //Wenn Zeitabschaltung aktiv und Anschaltung, AutoOff aktivieren
                     AutoOffTimed(Group); //
                 };
-
-                clearInterval(RampOnIntervalObject[Group]);
+                if (typeof RampOnIntervalObject[Group] == "object") clearInterval(RampOnIntervalObject[Group]);
             };
         }, Math.round(LightGroups[Group].rampOn.time / RampSteps) * 1000); //
     }
     else if (OnOff && LightGroups[Group].rampOn.enabled && !LightGroups[Group].rampOn.switchOutletsLast) { //Anschalten mit Ramping und einfache Lampen zuerst
-        log("Anschalten mit Ramping und einfache Lampen zuerst für " + LightGroups[Group].description);
+        log("GroupPowerOnOff: Anschalten mit Ramping und einfache Lampen zuerst für " + LightGroups[Group].description);
 
         for (let Light in LightGroups[Group].lights) { //Alles anschalten
             await setStateAsync(LightGroups[Group].lights[Light].power.oid, LightGroups[Group].lights[Light].power.onVal);
-            log("D Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff + " now setting brightness");
+            log("GroupPowerOnOff: D Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff + " now setting brightness");
         };
-        clearInterval(RampOnIntervalObject[Group]);
+        if (typeof RampOnIntervalObject[Group] == "object") clearInterval(RampOnIntervalObject[Group]);
         RampOnIntervalObject[Group] = setInterval(function () { // Interval starten
             //SetBrightness(Group, Math.round(RampSteps * LoopCount * (LightGroups[Group].bri / 100)));
             setDeviceBri(Group, Math.round(RampSteps * LoopCount * (LightGroups[Group].bri / 100)))
@@ -996,52 +1001,50 @@ async function GroupPowerOnOff(Group, OnOff) {
                 if (LightGroups[Group].autoOffTimed.enabled) { //Wenn Zeitabschaltung aktiv und Anschaltung, AutoOff aktivieren
                     AutoOffTimed(Group); //
                 };
-                clearInterval(RampOnIntervalObject[Group]);
+                if (typeof RampOnIntervalObject[Group] == "object") clearInterval(RampOnIntervalObject[Group]);
             }
         }, Math.round(LightGroups[Group].rampOn.time / RampSteps) * 1000); //
     }
 
     //Ausschalten mit Ramping
     else if (!OnOff && LightGroups[Group].rampOff.enabled && LightGroups[Group].rampOff.switchOutletsLast) { ////Ausschalten mit Ramping und einfache Lampen zuletzt
-        log("Ausschalten mit Ramping und einfache Lampen zuletzt für " + LightGroups[Group].description);
-        clearInterval(RampOffIntervalObject[Group]);
+        log("GroupPowerOnOff: Ausschalten mit Ramping und einfache Lampen zuletzt für " + LightGroups[Group].description);
+        if (typeof RampOffIntervalObject[Group] == "object") clearInterval(RampOffIntervalObject[Group]);
         RampOffIntervalObject[Group] = setInterval(function () { // Interval starten
             // SetBrightness(Group, LightGroups[Group].bri - LightGroups[Group].bri / RampSteps - Math.round(RampSteps * LoopCount * (LightGroups[Group].bri / 100)));
             setDeviceBri(Group, LightGroups[Group].bri - LightGroups[Group].bri / RampSteps - Math.round(RampSteps * LoopCount * (LightGroups[Group].bri / 100)));
             LoopCount++;
             //  log("Loopcount=" + LoopCount + " - " + " Rampsteps=" + RampSteps + " RampOffTime= " + LightGroups[Group].rampOff.time)
             if (LoopCount >= RampSteps) {
-                clearInterval(RampOffIntervalObject[Group]);
+                if (typeof RampOffIntervalObject[Group] == "object") clearInterval(RampOffIntervalObject[Group]);
                 for (let Light in LightGroups[Group].lights) {
                     if (LightGroups[Group].lights[Light].bri.oid == "") { //prüfen ob Helligkeitsdatenpunkt vorhanden
                         setStateAsync(LightGroups[Group].lights[Light].power.oid, LightGroups[Group].lights[Light].power.offVal); //Einfache Lampen ausschalten, dann
-                        log("F Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff);
+                        log("GroupPowerOnOff: F Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff);
                     };
                 };
             };
         }, Math.round(LightGroups[Group].rampOff.time / RampSteps) * 1000); //
     }
     else if (!OnOff && LightGroups[Group].rampOff.enabled && !LightGroups[Group].rampOff.switchOutletsLast) { ////Ausschalten mit Ramping und einfache Lampen zuerst
-        log("Ausschalten mit Ramping und einfache Lampen zuerst für " + LightGroups[Group].description);
+        log("GroupPowerOnOff: Ausschalten mit Ramping und einfache Lampen zuerst für " + LightGroups[Group].description);
         for (let Light in LightGroups[Group].lights) {
             if (LightGroups[Group].lights[Light].bri.oid == "") { //prüfen ob Helligkeitsdatenpunkt vorhanden, wenn nein
                 await setStateAsync(LightGroups[Group].lights[Light].power.oid, LightGroups[Group].lights[Light].power.offVal); //Einfache Lampen ausschalten, dann
-                log("F Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff);
+                log("GroupPowerOnOff: F Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff);
             };
         };
-        clearInterval(RampOffIntervalObject[Group]);
+        if (typeof RampOffIntervalObject[Group] == "object") clearInterval(RampOffIntervalObject[Group]);
         RampOffIntervalObject[Group] = setInterval(function () { // Interval starten
             LightGroups[Group].power = true; //Power intern wieder auf true, um Bri auszuführen wo auf power geprüft wird
-            // SetBrightness(Group, LightGroups[Group].bri - LightGroups[Group].bri / RampSteps - Math.round(RampSteps * LoopCount * (LightGroups[Group].bri / 100)));
             setDeviceBri(Group, LightGroups[Group].bri - LightGroups[Group].bri / RampSteps - Math.round(RampSteps * LoopCount * (LightGroups[Group].bri / 100)));
             LoopCount++;
-            log("Loopcount=" + LoopCount + " - " + " Rampsteps=" + RampSteps + " RampOffTime= " + LightGroups[Group].rampOff.time);
+            log("GroupPowerOnOff: Loopcount=" + LoopCount + " - " + " Rampsteps=" + RampSteps + " RampOffTime= " + LightGroups[Group].rampOff.time);
 
             if (LoopCount >= RampSteps) {
                 LightGroups[Group].power = false;
-
                 DeviceSwitch(Group, OnOff);
-                clearInterval(RampOffIntervalObject[Group]);
+                if (typeof RampOffIntervalObject[Group] == "object") clearInterval(RampOffIntervalObject[Group]);
             };
         }, Math.round(LightGroups[Group].rampOff.time / RampSteps) * 1000); //
     };
@@ -1055,7 +1058,7 @@ async function DeviceSwitch(Group, OnOff) { //Ausgelagert von GroupOnOff da im I
     for (let Light in LightGroups[Group].lights) {
         if (LightGroups[Group].lights[Light].bri.oid != "") { //prüfen ob Helligkeitsdatenpunkt vorhanden, wenn ja
             await setStateAsync(LightGroups[Group].lights[Light].power.oid, LightGroups[Group].lights[Light].power.offVal); //Lampen schalten
-            log("F Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff);
+            log("DeviceSwitch: Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff);
         };
     };
 }
@@ -1065,13 +1068,13 @@ async function GroupPowerCleaningLightOnOff(Group, OnOff) {
     if (OnOff) {
         for (let Light in LightGroups[Group].lights) {
             await setStateAsync(LightGroups[Group].lights[Light].power.oid, LightGroups[Group].lights[Light].power.onVal);
-            log("Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff);
+            log("GroupPowerCleaningLightOnOff: Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff);
         };
         await SetBrightness(Group, 100);
     } else {
         for (let Light in LightGroups[Group].lights) {
             await setStateAsync(LightGroups[Group].lights[Light].power.oid, LightGroups[Group].lights[Light].power.offVal);
-            log("Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff);
+            log("GroupPowerCleaningLightOnOff: Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff);
         };
     };
 }
@@ -1083,38 +1086,118 @@ function Ticker() {
     }, 60000);
 }
 
+// && LightGroups[Group].actualLux > LightGroups[Group].autoOnLux.minLux
 async function AutoOnLux(Group) {
-    if (logging) log("Reaching AutoOnLux for Group:," + Group + " enabled=" + LightGroups[Group].autoOnLux.enabled + " ,actuallux=" + LightGroups[Group].actualLux + " ,minLux=" + LightGroups[Group].autoOnLux.minLux + " LightGroups[Group].autoOnLux.dailyLock=" + LightGroups[Group].autoOnLux.dailyLock)
+    // log("Reaching AutoOnLux for Group: " + Group + " (" + LightGroups[Group].description + ") enabled=" + LightGroups[Group].autoOnLux.enabled + ", actuallux=" + LightGroups[Group].actualLux + ", minLux=" + LightGroups[Group].autoOnLux.minLux + " LightGroups[Group].autoOnLux.dailyLock=" + LightGroups[Group].autoOnLux.dailyLock)
+    //Handling für AutoOnLux
+
+    if (LightGroups[Group].autoOnLux.operator == "<") {
+        if (LightGroups[Group].autoOnLux.enabled && !LightGroups[Group].power && !LightGroups[Group].autoOnLux.dailyLock && LightGroups[Group].actualLux <= LightGroups[Group].autoOnLux.minLux) {
+            log("AutoOn_Lux() activated group=" + Group + " (" + LightGroups[Group].description + " )");
+            if ((LightGroups[Group].autoOnLux.switchOnlyWhenPresence && ActualPresence) || (LightGroups[Group].autoOnLux.switchOnlyWhenNoPresence && !ActualPresence)) {
+                await GroupPowerOnOff(Group, true);
+                if (LightGroups[Group].autoOnLux.bri != 0) {
+                    await SetBrightness(Group, LightGroups[Group].autoOnLux.bri);
+                };
+
+                await SetWhiteSubstituteColor(Group);
+                if (LightGroups[Group].autoOnLux.color != "") {
+                    await SetColor(Group, LightGroups[Group].autoOnLux.color);
+                };
+
+            };
+            LightGroups[Group].autoOnLux.dailyLock = true;
+            await setStateAsync(praefix + "." + Group + ".autoOnLux.dailyLock", true, true);
+        } else if (LightGroups[Group].autoOnLux.dailyLock && LightGroups[Group].actualLux > LightGroups[Group].autoOnLux.minLux) {//DailyLock zurücksetzen
+            LightGroups[Group].autoOnLux.dailyLockCounter++;
+            if (LightGroups[Group].autoOnLux.dailyLockCounter >= 5) { //5 Werte abwarten = Ausreisserschutz wenns am morgen kurz mal dunkler wird
+                LightGroups[Group].autoOnLux.dailyLockCounter = 0;
+                LightGroups[Group].autoOnLux.dailyLock = false;
+                await setStateAsync(praefix + "." + Group + ".autoOnLux.dailyLock", false, true);
+                log("AutoOn_Lux() setting DailyLock to " + LightGroups[Group].autoOnLux.dailyLock);
+            };
+        };
+    } else if (LightGroups[Group].autoOnLux.operator == ">") {
+        if (LightGroups[Group].autoOnLux.enabled && !LightGroups[Group].power && !LightGroups[Group].autoOnLux.dailyLock && LightGroups[Group].actualLux >= LightGroups[Group].autoOnLux.minLux) {
+            log("AutoOn_Lux() activated group=" + Group + " (" + LightGroups[Group].description + " )");
+            if ((LightGroups[Group].autoOnLux.switchOnlyWhenPresence && ActualPresence) || (LightGroups[Group].autoOnLux.switchOnlyWhenNoPresence && !ActualPresence)) {
+                await GroupPowerOnOff(Group, true);
+                if (LightGroups[Group].autoOnLux.bri != 0) {
+                    await SetBrightness(Group, LightGroups[Group].autoOnLux.bri);
+                };
+
+                await SetWhiteSubstituteColor(Group);
+                if (LightGroups[Group].autoOnLux.color != "") {
+                    await SetColor(Group, LightGroups[Group].autoOnLux.color);
+                };
+
+            };
+            LightGroups[Group].autoOnLux.dailyLock = true;
+            await setStateAsync(praefix + "." + Group + ".autoOnLux.dailyLock", true, true);
+
+        } else if (LightGroups[Group].autoOnLux.dailyLock && LightGroups[Group].actualLux < LightGroups[Group].autoOnLux.minLux) {//DailyLock zurücksetzen
+            LightGroups[Group].autoOnLux.dailyLockCounter++;
+            if (LightGroups[Group].autoOnLux.dailyLockCounter >= 5) { //5 Werte abwarten = Ausreisserschutz wenns am morgen kurz mal dunkler wird
+                LightGroups[Group].autoOnLux.dailyLockCounter = 0;
+                LightGroups[Group].autoOnLux.dailyLock = false;
+                await setStateAsync(praefix + "." + Group + ".autoOnLux.dailyLock", false, true);
+                log("AutoOn_Lux() setting DailyLock to " + LightGroups[Group].autoOnLux.dailyLock);
+            };
+        };
+    };
+}
+
+async function AutoOnLux2(Group) {
+    if (logging) log("Reaching AutoOnLux for Group: " + Group + " (" + LightGroups[Group].description + ") enabled=" + LightGroups[Group].autoOnLux.enabled + ", actuallux=" + LightGroups[Group].actualLux + ", minLux=" + LightGroups[Group].autoOnLux.minLux + " LightGroups[Group].autoOnLux.dailyLock=" + LightGroups[Group].autoOnLux.dailyLock)
     //Handling für AutoOnLux
     if ((LightGroups[Group].autoOnLux.switchOnlyWhenPresence && ActualPresence) || (LightGroups[Group].autoOnLux.switchOnlyWhenNoPresence && !ActualPresence)) {
         if (LightGroups[Group].autoOnLux.enabled && !LightGroups[Group].power && !LightGroups[Group].autoOnLux.dailyLock) {
+
             if (LightGroups[Group].autoOnLux.operator == "<" && LightGroups[Group].actualLux < LightGroups[Group].autoOnLux.minLux) {
                 await GroupPowerOnOff(Group, true);
-
                 LightGroups[Group].autoOnLux.dailyLock = true;
                 await setStateAsync(praefix + "." + Group + ".autoOnLux.dailyLock", true, true);
+
             } else if (LightGroups[Group].autoOnLux.operator == ">" && LightGroups[Group].actualLux > LightGroups[Group].autoOnLux.minLux) {
                 await GroupPowerOnOff(Group, true);
-
                 LightGroups[Group].autoOnLux.dailyLock = true;
                 await setStateAsync(praefix + "." + Group + ".autoOnLux.dailyLock", true, true);
+
             };
+
             if (LightGroups[Group].autoOnLux.bri != 0) {
                 await SetBrightness(Group, LightGroups[Group].autoOnLux.bri);
             };
+
             await SetWhiteSubstituteColor(Group);
             if (LightGroups[Group].autoOnLux.color != "") {
                 await SetColor(Group, LightGroups[Group].autoOnLux.color);
             };
-
         };
     };
 
-    if (LightGroups[Group].actualLux > LightGroups[Group].autoOnLux.minLux && LightGroups[Group].autoOnLux.dailyLock) {
-        LightGroups[Group].autoOnLux.dailyLock = false;
-        await setStateAsync(praefix + "." + Group + ".autoOnLux.dailyLock", false, true);
-    };
+    if (LightGroups[Group].autoOnLux.operator == ">") {
+        if (LightGroups[Group].actualLux > LightGroups[Group].autoOnLux.minLux && LightGroups[Group].autoOnLux.dailyLock) {
+            LightGroups[Group].autoOnLux.dailyLockCounter++;
+            log("LightGroups[Group].autoOnLux.dailyLockCounter=" + LightGroups[Group].autoOnLux.dailyLockCounter, "warn")
+            if (LightGroups[Group].autoOnLux.dailyLockCounter >= 5) { //5 Werte abwarten = Ausreisserschutz wenns am morgen kurz mal dunkler wird
+                LightGroups[Group].autoOnLux.dailyLock = false;
+                await setStateAsync(praefix + "." + Group + ".autoOnLux.dailyLock", false, true);
+                LightGroups[Group].autoOnLux.dailyLockCounter = 0;
+            };
+        };
+    } else if (LightGroups[Group].autoOnLux.operator == "<") {
+        if (LightGroups[Group].actualLux < LightGroups[Group].autoOnLux.minLux && LightGroups[Group].autoOnLux.dailyLock) {
+            LightGroups[Group].autoOnLux.dailyLockCounter++;
+            log("LightGroups[Group].autoOnLux.dailyLockCounter=" + LightGroups[Group].autoOnLux.dailyLockCounter, "warn")
+            if (LightGroups[Group].autoOnLux.dailyLockCounter >= 5) { //5 Werte abwarten = Ausreisserschutz wenns am morgen kurz mal dunkler wird
+                LightGroups[Group].autoOnLux.dailyLock = false;
+                await setStateAsync(praefix + "." + Group + ".autoOnLux.dailyLock", false, true);
+                LightGroups[Group].autoOnLux.dailyLockCounter = 0;
+            };
+        };
 
+    };
 }
 
 async function AutoOnMotion(Group) {
@@ -1151,31 +1234,52 @@ async function AutoOnPresenceIncrease() {
 async function blink(Group) {
     let loopcount = 0;
 
-    if (!LightGroups[Group].power) { //Wenn Gruppe aus, anschalten
+    if (!LightGroups[Group].power) { //Wenn Gruppe aus, anschalten und ggfs. Helligkeit und Farbe setzen
+        log("an " + loopcount);
+        for (let Light in LightGroups[Group].lights) {
+            await setStateAsync(LightGroups[Group].lights[Light].power.oid, LightGroups[Group].lights[Light].power.onVal, false);
+            log("Blink: Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: on");
+        };
+        LightGroups[Group].power = true;
+        await setStateAsync(praefix + "." + Group + ".power", true, true);
 
-    }
-    clearBlinkIntervals(Group);
+        if (LightGroups[Group].blink.bri != 0) {
+            await SetBrightness(Group, LightGroups[Group].blink.bri);
+        };
+        await SetWhiteSubstituteColor(Group);
+        if (LightGroups[Group].blink.color != "") {
+            await SetColor(Group, LightGroups[Group].blink.color);
+        };
+
+
+        loopcount++;
+    };
+
+    if (typeof BlinkIntervalObj[Group] == "object") clearInterval(BlinkIntervalObj[Group]);
+
     BlinkIntervalObj[Group] = setInterval(function () { // Wenn 
         loopcount++;
 
         if (loopcount <= LightGroups[Group].blink.blinks * 2) {
-            if (loopcount / 2 == Math.round(loopcount / 2)) {
+            if (LightGroups[Group].power) {
                 log("aus " + loopcount);
                 for (let Light in LightGroups[Group].lights) {
-                    setStateAsync(LightGroups[Group].lights[Light].power.oid, LightGroups[Group].lights[Light].power.offVal);
-                    log("Blink Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: off");
+                    setStateAsync(LightGroups[Group].lights[Light].power.oid, LightGroups[Group].lights[Light].power.offVal, false);
+                    log("Blink: Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: off");
                 };
-
+                LightGroups[Group].power = false;
+                setStateAsync(praefix + "." + Group + ".power", false, true);
             } else {
                 log("an " + loopcount);
                 for (let Light in LightGroups[Group].lights) {
-                    setStateAsync(LightGroups[Group].lights[Light].power.oid, LightGroups[Group].lights[Light].power.onVal);
-                    log("Blink Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: on");
+                    setStateAsync(LightGroups[Group].lights[Light].power.oid, LightGroups[Group].lights[Light].power.onVal, false);
+                    log("Blink: Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: on");
                 };
-
+                LightGroups[Group].power = true;
+                setStateAsync(praefix + "." + Group + ".power", true, true);
             };
         } else {
-            clearBlinkIntervals(Group);
+            clearInterval(BlinkIntervalObj[Group]);
         };
 
     }, LightGroups[Group].blink.frequency * 1000);
@@ -1198,22 +1302,31 @@ async function AutoOffLux(Group) {//Handling für AutoOffLux
 
     if (LightGroups[Group].autoOffLux.operator == "<") { //DailyLock resetten
         if (LightGroups[Group].actualLux > LightGroups[Group].autoOffLux.minLux && LightGroups[Group].autoOffLux.dailyLock) {
-            LightGroups[Group].autoOffLux.dailyLock = false;
-            await setStateAsync(praefix + "." + Group + ".autoOffLux.dailyLock", false, true);
+            LightGroups[Group].autoOffLux.dailyLockCounter++;
+            if (LightGroups[Group].autoOffLux.dailyLockCounter >= 5) {
+                LightGroups[Group].autoOffLux.dailyLock = false;
+                await setStateAsync(praefix + "." + Group + ".autoOffLux.dailyLock", false, true);
+                LightGroups[Group].autoOffLux.dailyLockCounter = 0;
+            };
         };
     } else if (LightGroups[Group].autoOffLux.operator == ">") {
         if (LightGroups[Group].actualLux < LightGroups[Group].autoOffLux.minLux && LightGroups[Group].autoOffLux.dailyLock) {
-            LightGroups[Group].autoOffLux.dailyLock = false;
-            await setStateAsync(praefix + "." + Group + ".autoOffLux.dailyLock", false, true);
+            LightGroups[Group].autoOfLux.dailyLockCounter++;
+            if (LightGroups[Group].autoOnLux.dailyLockCounter >= 5) {
+
+
+                LightGroups[Group].autoOffLux.dailyLock = false;
+                await setStateAsync(praefix + "." + Group + ".autoOffLux.dailyLock", false, true);
+                LightGroups[Group].autoOffLux.dailyLockCounter = 0;
+            };
         };
     };
-
 }
 
 async function AutoOffTimed(Group) {
     if (logging) log("Reaching AutoOffTimed for Group " + Group + " set time=" + LightGroups[Group].autoOffTimed.autoOffTime + " LightGroups[Group].isMotion=" + LightGroups[Group].isMotion + " LightGroups[Group].autoOffTimed.noAutoOffWhenMotion=" + LightGroups[Group].autoOffTimed.noAutoOffWhenMotion)
     if (LightGroups[Group].autoOffTimed.enabled) {
-        await clearAutoOffTimeout(Group);
+        if (typeof AutoOffTimeoutObject[Group] == "object") clearTimeout(AutoOffTimeoutObject[Group]);
         AutoOffTimeoutObject[Group] = setTimeout(function () { // Interval starten
             if (LightGroups[Group].autoOffTimed.noAutoOffWhenMotion && LightGroups[Group].isMotion) { //Wenn noAutoOffWhenmotion aktiv und Bewegung erkannt
                 log("AutoOffTimed: Motion detected, restarting Timeout for Group " + Group + " set time=" + LightGroups[Group].autoOffTimed.autoOffTime);
@@ -1285,7 +1398,7 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
         case "autoOnPresenceIncrease.bri":
         case "autoOnPresenceIncrease.color":
         case "autoOnPresenceIncrease.minLux":
-            AutoOnPresenceIncrease()
+            AutoOnPresenceIncrease();
             break;
         case "bri":
             await SetBrightness(Group, LightGroups[Group].bri);
@@ -1330,12 +1443,14 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
             break;
         case "blink.blinks":
         case "blink.frequency":
+        case "blink.bri":
+        case "blink.color":
             break;
         case "blink.enabled":
             blink(Group);
             break;
         default:
-            log("Error, unknown or missing property: " + prop1, "warn");
+            log("Controller: Error, unknown or missing property: " + prop1, "warn");
     };
 
 }

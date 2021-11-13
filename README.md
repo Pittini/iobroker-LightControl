@@ -44,7 +44,7 @@ In der channelroot findet ihr die allgemeinen Datenpunkte der Gruppe, in den Unt
 ![lc_info2.png](/admin/lc_info2.png) 
 
 ## Changelog
-### V0.2.0 (24.7.2021)
+### V2.0.0 (24.7.2021)
 * Init V2, kompletter Rewrite.
 
 ### V0.1.6 (27.3.2021)
