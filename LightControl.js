@@ -1,4 +1,4 @@
-const Version = "2.0.13" //vom 1.11.2021 - Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
+const Version = "2.0.14" //vom 17.11.2021 - Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
 
 log("starting LightControl V." + Version);
 
@@ -635,20 +635,22 @@ function clearBlinkIntervals(Group) {
 
 }
 /* ------------------------- FUNCTIONS FÜR LUXSENSOR HANDLNG --------------------------------- */
-/*
-function ChangeLuxSensorTrigger(Group, prop, oldsensor, newsensor) { //Used by init
-    log("Changed LuxSensor detected, from: " + oldsensor + " to: " + newsensor + " deleting old subscription and create new one");
+
+function ChangeLuxSensorTrigger(Group, prop, oldsensor, newsensor) { //Used by controller
+    log("Changed LuxSensor detected, from: " + oldsensor + " to: " + newsensor + " deleting old subscription and create new one. ");
     if (oldsensor != "") unsubscribe(oldsensor);
     if (newsensor != "") {
-        on({ id: newsensor, change: "ne", ack: true }, function (dp) { //Trigger für Luxsensor erstellen
+        on({ id: newsensor, change: "ne" }, function (dp) { //Trigger für Luxsensor erstellen
             if (logging) log("Triggered " + LightGroups[Group][prop] + " new value is " + dp.state.val)
             LightGroups[Group].actualLux = dp.state.val;
-            Controller(Group, prop, dp.oldState.val, dp.state.val);
+            Controller(Group, "actualLux", dp.oldState.val, dp.state.val);
         });
     };
 }
-*/
+
 async function DoAllTheLuxSensorThings(Group, prop) {  //Used by init
+    if (logging) log("Reaching DoAllTheLuxSensorThings for Group" + Group + " prop=" + LightGroups[Group][prop])
+
     if (prop == "luxSensorOid" && LightGroups[Group][prop] != "") {
         if (logging) log("LightGroups[" + Group + "].luxSensorOid=" + LightGroups[Group][prop])
         if (LightGroups[Group][prop] == LuxSensor) { //Wenn StandardLuxsensor für Gruppe verwendet Wert nicht wiederholt lesen sondern Globalen Luxwert verwenden
@@ -657,8 +659,8 @@ async function DoAllTheLuxSensorThings(Group, prop) {  //Used by init
         } else {
             LightGroups[Group].actualLux = (await getStateAsync(LightGroups[Group][prop])).val; //Individuellen Gruppen luxwert lesen
             if (logging) log("Group " + Group + " using individual luxsensor " + LightGroups[Group][prop] + ", value is: " + LightGroups[Group].actualLux);
-            on({ id: LightGroups[Group][prop], change: "ne", ack: true }, function (dp) { //Trigger für individuelle Luxsensoren erstellen
-                if (logging) log("Triggered " + LightGroups[Group][prop] + " new value is " + dp.state.val)
+            on({ id: LightGroups[Group][prop], change: "ne" }, function (dp) { //Trigger für individuelle Luxsensoren erstellen
+                log("Triggered individual luxsensor " + LightGroups[Group][prop] + " new value is " + dp.state.val)
                 LightGroups[Group].actualLux = dp.state.val;
                 //  log("LightGroups[" + Group + "].actualLux = " + LightGroups[Group].actualLux);
                 Controller(Group, "actualLux", dp.oldState.val, dp.state.val);
@@ -1086,7 +1088,6 @@ function Ticker() {
     }, 60000);
 }
 
-// && LightGroups[Group].actualLux > LightGroups[Group].autoOnLux.minLux
 async function AutoOnLux(Group) {
     // log("Reaching AutoOnLux for Group: " + Group + " (" + LightGroups[Group].description + ") enabled=" + LightGroups[Group].autoOnLux.enabled + ", actuallux=" + LightGroups[Group].actualLux + ", minLux=" + LightGroups[Group].autoOnLux.minLux + " LightGroups[Group].autoOnLux.dailyLock=" + LightGroups[Group].autoOnLux.dailyLock)
     //Handling für AutoOnLux
@@ -1179,7 +1180,7 @@ async function AutoOnLux2(Group) {
     if (LightGroups[Group].autoOnLux.operator == ">") {
         if (LightGroups[Group].actualLux > LightGroups[Group].autoOnLux.minLux && LightGroups[Group].autoOnLux.dailyLock) {
             LightGroups[Group].autoOnLux.dailyLockCounter++;
-            log("LightGroups[Group].autoOnLux.dailyLockCounter=" + LightGroups[Group].autoOnLux.dailyLockCounter, "warn")
+            if (logging) log("LightGroups[Group].autoOnLux.dailyLockCounter=" + LightGroups[Group].autoOnLux.dailyLockCounter, "warn")
             if (LightGroups[Group].autoOnLux.dailyLockCounter >= 5) { //5 Werte abwarten = Ausreisserschutz wenns am morgen kurz mal dunkler wird
                 LightGroups[Group].autoOnLux.dailyLock = false;
                 await setStateAsync(praefix + "." + Group + ".autoOnLux.dailyLock", false, true);
@@ -1189,7 +1190,7 @@ async function AutoOnLux2(Group) {
     } else if (LightGroups[Group].autoOnLux.operator == "<") {
         if (LightGroups[Group].actualLux < LightGroups[Group].autoOnLux.minLux && LightGroups[Group].autoOnLux.dailyLock) {
             LightGroups[Group].autoOnLux.dailyLockCounter++;
-            log("LightGroups[Group].autoOnLux.dailyLockCounter=" + LightGroups[Group].autoOnLux.dailyLockCounter, "warn")
+            if (logging) log("LightGroups[Group].autoOnLux.dailyLockCounter=" + LightGroups[Group].autoOnLux.dailyLockCounter, "warn")
             if (LightGroups[Group].autoOnLux.dailyLockCounter >= 5) { //5 Werte abwarten = Ausreisserschutz wenns am morgen kurz mal dunkler wird
                 LightGroups[Group].autoOnLux.dailyLock = false;
                 await setStateAsync(praefix + "." + Group + ".autoOnLux.dailyLock", false, true);
@@ -1201,7 +1202,7 @@ async function AutoOnLux2(Group) {
 }
 
 async function AutoOnMotion(Group) {
-    //  log("Reaching AutoOnMotion for Group:," + Group + " enabled=" + LightGroups[Group].autoOnMotion.enabled + " ,actuallux=" + LightGroups[Group].actualLux + " ,minLux=" + LightGroups[Group].autoOnMotion.minLux)
+    if (logging) log("Reaching AutoOnMotion for Group:," + Group + " enabled=" + LightGroups[Group].autoOnMotion.enabled + " ,actuallux=" + LightGroups[Group].actualLux + " ,minLux=" + LightGroups[Group].autoOnMotion.minLux)
     if (LightGroups[Group].autoOnMotion.enabled && LightGroups[Group].actualLux < LightGroups[Group].autoOnMotion.minLux && LightGroups[Group].isMotion) {
         log("Motion for Group " + Group + " detected, switching on")
         await GroupPowerOnOff(Group, true);
@@ -1349,13 +1350,17 @@ async function main() {
 }
 
 async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
-    // log("Reaching Controller, Group=" + Group + " Property1=" + prop1 + " NewVal=" + NewVal + " OldVal=" + OldVal);
+    if (logging) log("Reaching Controller, Group=" + Group + " Property1=" + prop1 + " NewVal=" + NewVal + " OldVal=" + OldVal);
 
     switch (prop1) {
+        case "luxSensorOid":
+            ChangeLuxSensorTrigger(Group, prop1, OldVal, NewVal)
+            break;
         case "actualLux":
             AutoOnLux(Group);
             AutoOffLux(Group);
             AdaptiveBri(Group);
+            AutoOnMotion(Group);
             break;
         case "isMotion":
             LightGroups[Group].isMotion = NewVal;
