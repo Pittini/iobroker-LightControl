@@ -30,7 +30,7 @@ Optional könnt ihr Datenpunkte für Helligkeit, Farbe, Farbtemperatur und Farb/
 
 
 
-
+Hier fehlt noch was...
 
 
 
@@ -44,6 +44,11 @@ In der channelroot findet ihr die allgemeinen Datenpunkte der Gruppe, in den Unt
 ![lc_info2.png](/admin/lc_info2.png) 
 
 ## Changelog
+### V2.0.15 (23.11.2021)
+* Fix: Defaultwert für ct von 2700K auf 2100K verringert.
+* Fix: Individuelle Lux Sensoren werden nun wie gewollt berücksichtigt, statt immer den generischen zu verwenden.
+* Fix: AutoOnMotion wird jetzt auch durch unterschreiten des Luxwertes ausgelöst, statt nur durch den Bwm.
+* Add: Gruppe "all" und Masterswitch hinzugefügt.
 ### V2.0.0 (24.7.2021)
 * Init V2, kompletter Rewrite.
 

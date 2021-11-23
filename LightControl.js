@@ -1,4 +1,4 @@
-const Version = "2.0.14" //vom 17.11.2021 - Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
+const Version = "2.0.15" //vom 23.11.2021 - Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
 
 log("starting LightControl V." + Version);
 
@@ -347,6 +347,23 @@ const LightGroups = {
         sensors: {
             0: { id: 'linkeddevices.0.Bewegungsmelder.Schlafzimmer_C.0.IsMotion', motionVal: true, noMotionVal: false }
         }
+    },
+    11: {
+        description: "Test",
+        lights: {
+            0: {
+                description: "Testlampe",
+                power: { oid: "0_userdata.0.TestDatenpunkte.Lampen.power", onVal: true, offVal: false },
+                bri: { oid: "0_userdata.0.TestDatenpunkte.Lampen.bri", minVal: 0, maxVal: 100, defaultVal: 100 },
+                ct: { oid: "0_userdata.0.TestDatenpunkte.Lampen.ct", minVal: 2100, maxVal: null },
+                sat: { oid: "", minVal: null, maxVal: null },
+                modeswitch: { oid: "", whiteModeVal: false, colorModeVal: true },
+                color: { oid: "", type: "", default: "" }
+            }
+        },
+        sensors: {
+
+        }
     }
 
 };
@@ -368,11 +385,14 @@ const result = getObject("system.adapter.javascript.0");
 const lat = result.native.latitude;
 const long = result.native.longitude;
 
+const GroupAllTemplate = {
+    power: { id: praefix + ".all.power", common: { read: true, write: true, name: "Masterpower", type: "boolean", role: "switch.power", def: false } }
+}
 
 const GroupTemplate = {
     power: { id: "", common: { read: true, write: true, name: "Power", type: "boolean", role: "switch.power", def: false } },
     bri: { id: "", common: { read: true, write: true, name: "Brightness", type: "number", role: "level.brightness", def: 100, min: 0, max: 100, unit: "%" } },
-    ct: { id: "", common: { read: true, write: true, name: "Colortemperature", type: "number", role: "level.color.temperature", def: 3300, min: 2700, max: 6500, unit: "K" } },
+    ct: { id: "", common: { read: true, write: true, name: "Colortemperature", type: "number", role: "level.color.temperature", def: 3300, min: 2100, max: 6500, unit: "K" } },
     color: { id: "", common: { read: true, write: true, name: "Color", type: "string", role: "level.color.rgb", def: "#FFFFFF" } },
     luxSensorOid: { id: "", common: { read: true, write: true, name: "ObjectId for Luxsensor", type: "string", role: "state", def: LuxSensor } },
     adaptiveBri: { id: "", common: { read: true, write: true, name: "Adaptive Brightness", type: "boolean", role: "switch.enabled", def: false } },
@@ -479,7 +499,7 @@ async function init() {
 
     //Datenpunkte anlegen, Objekte erweitern, Daten einlesen, Trigger erzeugen
     for (let Group in LightGroups) { //Gruppen durchgehen
-        await DoAllTheSensorThings(Group); //Sonderfall sensors, da diese nicht via Template, sondern dyn. durch User angelegt werden
+        await DoAllTheSensorThings(Group); //Sonderfall sensors
 
         for (let prop1 in GroupTemplate) { // Template Properties 1. Ebene durchgehen
             if (typeof GroupTemplate[prop1].id == "undefined") { //Wenn keine id zu finden, nächste, 2. Ebene durchlaufen
@@ -553,9 +573,28 @@ async function init() {
         LightGroups[Group].autoOnLux.dailyLockCounter = 0;
         LightGroups[Group].autoOffLux.dailyLockCounter = 0;
     };
-    log("Init: Created " + DpCount + " Datapoints");
-    //log(LightGroups)
 
+    for (let prop1 in GroupAllTemplate) { // Sondergruppe "all" anlegen
+        if (!await existsStateAsync(GroupAllTemplate[prop1].id)) {// Prüfen ob state noch nicht vorhanden
+            await createStateAsync(GroupAllTemplate[prop1].id, GroupTemplate[prop1].common);//State anlegen
+            log("Init: Created datapoint " + GroupAllTemplate[prop1].id);
+            DpCount++;
+        } else {
+            if (logging) log("Init: Datapoint " + GroupTemplate[prop1].id + " still exists, skipping creation and setting trigger");
+        };
+        on({ id: GroupAllTemplate[prop1].id, change: "any", ack: false }, function (dp) {
+            log("Init: Triggered " + dp.id + " new value is " + dp.state.val);
+            if (prop1 == "power") SetMasterPower(dp.oldState.val, dp.state.val);
+        });
+
+    };
+    if (!await existsObjectAsync(praefix + "." + "all")) { //Gruppenchannel anlegen wenn noch nicht vorhanden
+        await setObjectAsync(praefix + "." + "all", { type: 'channel', common: { name: "Sammelfunktion um alle Gruppen gleichzeitig zu steuern" }, native: {} });
+        log("Init: Channel " + praefix + "." + "all" + " created");
+    };
+
+
+    log("Init: Created " + DpCount + " Datapoints");
 
     onStop(function () { //Bei Scriptende alle Intervalle und Timeouts löschen
         clearRampOnIntervals(null);
@@ -565,6 +604,15 @@ async function init() {
         clearInterval(TickerIntervalObj);
     }, 10);
     return true;
+}
+
+async function SetMasterPower(oldVal, NewVal) {
+    log("Reaching SetMasterPower");
+    for (let Group in LightGroups) {
+        log("Switching Group " + LightGroups[Group].description + ", Id:" + praefix + "." + Group + ".power" + " to " + NewVal);
+        await setStateAsync(praefix + "." + Group + ".power", NewVal);
+    };
+
 }
 
 async function clearRampOnIntervals(Group) {
@@ -728,6 +776,9 @@ function SummarizeSensors(Group) {
         Controller(Group, "isMotion", LightGroups[Group].isMotion, Motionstate);
     };
 }
+
+/* ------------------------- FUNCTIONS FÜR LICHT HANDLNG --------------------------------- */
+
 
 async function SetBrightness(Group, Brightness) {
     if (logging) log("Reaching SetBrightness, Group=" + Group + " Brightness=" + Brightness);
