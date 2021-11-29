@@ -8,7 +8,7 @@ Lichtsteuerung für Leuchtmittel unterschiedlicher Hersteller
 * Möglichkeit der Zuweisung von defaultwerten zu jedem Leuchtmittel (gleiche Helligkeit trotz unterschiedlich leistungsstarker Leuchtmittel)
 * Verwendung beliebig vieler Bewegungsmelder pro Gruppe
 * Ramping (langsame Änderung der Helligkeit bis Zielwert) für on und off
-* AutoOff nach Zeit / Kein Off bei Bewegung; Zwei Modi: Zeit restart nach jeder gemeldeten Bewegung oder Prüfung auf Bewegung kurz vor Abschaltung.
+* AutoOff nach Zeit / Kein Off bei Bewegung; 
 * AutoOff nach Helligkeit
 * AutoOn bei Bewegung ab bestimmter Helligkeit 
 * AutoOn bei Dunkelheit
@@ -23,6 +23,8 @@ Lichtsteuerung für Leuchtmittel unterschiedlicher Hersteller
 ![lc_info1.png](/admin/lc_info1.png) 
 
 ## Installation
+Zuerst solltet Ihr in den Einstellungen des JS Adapters, das Zusatzmodul **suncalc** eintragen und setObject zulassen.
+
 Nachdem ihr das Skript in ein neues Js Projekt kopiert habt, müßt ihr dem Skript Eure Leuchtmittel bekannt machen, es wird mindestens ein Schaltdatenpunkt (an/aus) erwartet. D.h. ihr könnt hier auch Steckdosen schalten mit herkömmlichen, nicht smarten, Leuchtmitteln, bzw. auch Geräte die keine Lampen sind.
 Optional könnt ihr Datenpunkte für Helligkeit, Farbe, Farbtemperatur und Farb/Weiss Modus umschaltung angeben. Zu den jeweiligen Einträgen gehören dann noch folgende Zusatzangaben: die jeweiligen min/max Werte des Datenpunktes, sowie die gewünschten Defaultwerte, nachfolgend das ganze im Detail:
 
@@ -44,6 +46,8 @@ In der channelroot findet ihr die allgemeinen Datenpunkte der Gruppe, in den Unt
 ![lc_info2.png](/admin/lc_info2.png) 
 
 ## Changelog
+### V2.0.16 (29.11.2021)
+* Fix: Fehler bei aktiviertem AutoOffLux und Prüfung auf ">" gestellt, behoben (Typo).
 ### V2.0.15 (23.11.2021)
 * Fix: Defaultwert für ct von 2700K auf 2100K verringert.
 * Fix: Individuelle Lux Sensoren werden nun wie gewollt berücksichtigt, statt immer den generischen zu verwenden.
