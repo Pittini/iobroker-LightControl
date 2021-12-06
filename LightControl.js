@@ -794,17 +794,6 @@ async function SetBrightness(Group, Brightness) {
     return true;
 }
 
-async function SetBrightnessDimming(Group, UpDown) {
-    for (let Light in LightGroups[Group].lights) { //Alle Lampen der Gruppe durchgehen
-        if (LightGroups[Group].lights[Light].bri.oid != "") { //Prüfen ob Eintrag für Helligkeit vorhanden
-            let oldBri = (await getStateAsync(LightGroups[Group].lights[Light].bri.oid)).val;
-            let Brightness = (UpDown == 'Up') ? oldBri + RampSteps : oldBri - RampSteps;            
-            await setStateAsync(LightGroups[Group].lights[Light].bri.oid, (Math.min(Math.max(Brightness, 10), 100)) , false);
-            if (logging) log("Reaching SetBrightnessDimming, Group=" + Group + " Brightness=" + Brightness);
-        };
-    };
-}
-
 function AdaptiveBri(Group) {
     if (logging) log("Reaching AdaptiveBri for Group " + Group + " actual Lux=" + LightGroups[Group].actualLux + " generic lux=" + ActualGenericLux);
     let MinBri = 10;
@@ -1484,14 +1473,10 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
         case "adaptiveCtMode":
             break;
         case "dimmUp":
-            if (LightGroups[Group].power) {
-                SetBrightnessDimming(Group, "Up");
-            }
+            await setStateAsync(praefix + "." + Group + "." + "bri", (Math.min(Math.max(LightGroups[Group].bri + RampSteps, 10), 100)) , false);
             break;
         case "dimmDown":
-            if (LightGroups[Group].power) {
-                SetBrightnessDimming(Group, "Down");
-            }
+            await setStateAsync(praefix + "." + Group + "." + "bri", (Math.min(Math.max(LightGroups[Group].bri - RampSteps, 10), 100)) , false);
             break;
         case "blink.blinks":
         case "blink.frequency":
