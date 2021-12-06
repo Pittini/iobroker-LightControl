@@ -391,6 +391,8 @@ const GroupAllTemplate = {
 
 const GroupTemplate = {
     power: { id: "", common: { read: true, write: true, name: "Power", type: "boolean", role: "switch.power", def: false } },
+    dimmUp: { id: "", common: { read: true, write: true, name: "DimmUp", type: "boolean", role: "button", def: false } },
+    dimmDown: { id: "", common: { read: true, write: true, name: "DimmDown", type: "boolean", role: "button", def: false } },
     bri: { id: "", common: { read: true, write: true, name: "Brightness", type: "number", role: "level.brightness", def: 100, min: 0, max: 100, unit: "%" } },
     ct: { id: "", common: { read: true, write: true, name: "Colortemperature", type: "number", role: "level.color.temperature", def: 3300, min: 2100, max: 6500, unit: "K" } },
     color: { id: "", common: { read: true, write: true, name: "Color", type: "string", role: "level.color.rgb", def: "#FFFFFF" } },
@@ -792,6 +794,16 @@ async function SetBrightness(Group, Brightness) {
     return true;
 }
 
+async function SetBrightnessDimming(Group, UpDown) {
+    for (let Light in LightGroups[Group].lights) { //Alle Lampen der Gruppe durchgehen
+        if (LightGroups[Group].lights[Light].bri.oid != "") { //Prüfen ob Eintrag für Helligkeit vorhanden
+            let oldBri = (await getStateAsync(LightGroups[Group].lights[Light].bri.oid)).val;
+            let Brightness = (UpDown == 'Up') ? oldBri + RampSteps : oldBri - RampSteps;            
+            await setStateAsync(LightGroups[Group].lights[Light].bri.oid, (Math.min(Math.max(Brightness, 10), 100)) , false);
+            if (logging) log("Reaching SetBrightnessDimming, Group=" + Group + " Brightness=" + Brightness);
+        };
+    };
+}
 
 function AdaptiveBri(Group) {
     if (logging) log("Reaching AdaptiveBri for Group " + Group + " actual Lux=" + LightGroups[Group].actualLux + " generic lux=" + ActualGenericLux);
@@ -1470,6 +1482,16 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
             await SetCt(Group);
             break;
         case "adaptiveCtMode":
+            break;
+        case "dimmUp":
+            if (LightGroups[Group].power) {
+                SetBrightnessDimming(Group, "Up");
+            }
+            break;
+        case "dimmDown":
+            if (LightGroups[Group].power) {
+                SetBrightnessDimming(Group, "Down");
+            }
             break;
         case "blink.blinks":
         case "blink.frequency":
