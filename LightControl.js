@@ -1,4 +1,4 @@
-const Version = "2.0.16" //vom 29.11.2021 - Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
+const Version = "2.0.17" //vom 9.12.2021 - Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
 
 log("starting LightControl V." + Version);
 
@@ -393,6 +393,7 @@ const GroupTemplate = {
     power: { id: "", common: { read: true, write: true, name: "Power", type: "boolean", role: "switch.power", def: false } },
     dimmUp: { id: "", common: { read: true, write: true, name: "DimmUp", type: "boolean", role: "button", def: false } },
     dimmDown: { id: "", common: { read: true, write: true, name: "DimmDown", type: "boolean", role: "button", def: false } },
+    dimmAmount: { id: "", common: { read: true, write: true, name: "Brightnesssteps for dimming", type: "number", role: "level.brightness", def: 10, min: 2, max: 50, unit: "%" } },
     bri: { id: "", common: { read: true, write: true, name: "Brightness", type: "number", role: "level.brightness", def: 100, min: 0, max: 100, unit: "%" } },
     ct: { id: "", common: { read: true, write: true, name: "Colortemperature", type: "number", role: "level.color.temperature", def: 3300, min: 2100, max: 6500, unit: "K" } },
     color: { id: "", common: { read: true, write: true, name: "Color", type: "string", role: "level.color.rgb", def: "#FFFFFF" } },
@@ -1376,19 +1377,23 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
             ChangeLuxSensorTrigger(Group, prop1, OldVal, NewVal)
             break;
         case "actualLux":
-            AutoOnLux(Group);
-            AutoOffLux(Group);
-            AdaptiveBri(Group);
-            AutoOnMotion(Group);
+            if (!LightGroups[Group].powerCleaningLight) { //Autofunktionen nur wenn Putzlicht nicht aktiv
+                AutoOnLux(Group);
+                AutoOffLux(Group);
+                AdaptiveBri(Group);
+                AutoOnMotion(Group);
+            };
             break;
         case "isMotion":
             LightGroups[Group].isMotion = NewVal;
-            if (LightGroups[Group].isMotion && LightGroups[Group].power) { //AutoOff Timer wird nach jeder Bewegung neugestartet
-                log("Controller: Motion detected, restarting AutoOff Timer for Group " + Group);
-                AutoOffTimed(Group);
-            };
 
-            AutoOnMotion(Group);
+            if (!LightGroups[Group].powerCleaningLight) {
+                if (LightGroups[Group].isMotion && LightGroups[Group].power) { //AutoOff Timer wird nach jeder Bewegung neugestartet
+                    log("Controller: Motion detected, restarting AutoOff Timer for Group " + Group);
+                    AutoOffTimed(Group);
+                };
+                AutoOnMotion(Group);
+            };
             break;
         case "rampOn.enabled":
         case "rampOn.switchOutletsLast":
@@ -1473,10 +1478,12 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
         case "adaptiveCtMode":
             break;
         case "dimmUp":
-            await setStateAsync(praefix + "." + Group + "." + "bri", (Math.min(Math.max(LightGroups[Group].bri + RampSteps, 10), 100)) , false);
+            await setStateAsync(praefix + "." + Group + "." + "bri", (Math.min(Math.max(LightGroups[Group].bri + LightGroups[Group].dimmAmount, 10), 100)), false);
             break;
         case "dimmDown":
-            await setStateAsync(praefix + "." + Group + "." + "bri", (Math.min(Math.max(LightGroups[Group].bri - RampSteps, 10), 100)) , false);
+            await setStateAsync(praefix + "." + Group + "." + "bri", (Math.min(Math.max(LightGroups[Group].bri - LightGroups[Group].dimmAmount, 2), 100)), false);
+            break;
+            case "dimmAmount":
             break;
         case "blink.blinks":
         case "blink.frequency":

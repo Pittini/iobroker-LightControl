@@ -46,6 +46,8 @@ In der channelroot findet ihr die allgemeinen Datenpunkte der Gruppe, in den Unt
 ![lc_info2.png](/admin/lc_info2.png) 
 
 ## Changelog
+### V2.0.17 (09.12.2021)
+* Add: Datenpunkte für auf/ab dimmen, sowie Einstellmöglichkeit für die Dimmschritte hinzugefügt.
 ### V2.0.16 (29.11.2021)
 * Fix: Fehler bei aktiviertem AutoOffLux und Prüfung auf ">" gestellt, behoben (Typo).
 ### V2.0.15 (23.11.2021)
