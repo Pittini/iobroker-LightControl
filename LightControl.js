@@ -391,6 +391,8 @@ const GroupAllTemplate = {
 
 const GroupTemplate = {
     power: { id: "", common: { read: true, write: true, name: "Power", type: "boolean", role: "switch.power", def: false } },
+    dimmUp: { id: "", common: { read: true, write: true, name: "DimmUp", type: "boolean", role: "button", def: false } },
+    dimmDown: { id: "", common: { read: true, write: true, name: "DimmDown", type: "boolean", role: "button", def: false } },
     bri: { id: "", common: { read: true, write: true, name: "Brightness", type: "number", role: "level.brightness", def: 100, min: 0, max: 100, unit: "%" } },
     ct: { id: "", common: { read: true, write: true, name: "Colortemperature", type: "number", role: "level.color.temperature", def: 3300, min: 2100, max: 6500, unit: "K" } },
     color: { id: "", common: { read: true, write: true, name: "Color", type: "string", role: "level.color.rgb", def: "#FFFFFF" } },
@@ -791,7 +793,6 @@ async function SetBrightness(Group, Brightness) {
     setState(praefix + "." + Group + "." + "bri", Brightness, true); //Ausführung mit Ack bestätigen
     return true;
 }
-
 
 function AdaptiveBri(Group) {
     if (logging) log("Reaching AdaptiveBri for Group " + Group + " actual Lux=" + LightGroups[Group].actualLux + " generic lux=" + ActualGenericLux);
@@ -1470,6 +1471,12 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
             await SetCt(Group);
             break;
         case "adaptiveCtMode":
+            break;
+        case "dimmUp":
+            await setStateAsync(praefix + "." + Group + "." + "bri", (Math.min(Math.max(LightGroups[Group].bri + RampSteps, 10), 100)) , false);
+            break;
+        case "dimmDown":
+            await setStateAsync(praefix + "." + Group + "." + "bri", (Math.min(Math.max(LightGroups[Group].bri - RampSteps, 10), 100)) , false);
             break;
         case "blink.blinks":
         case "blink.frequency":
