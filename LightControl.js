@@ -1497,12 +1497,6 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
         case "adaptiveCtMode":
             break;
         case "adaptiveCtTime":
-            // Setzen einer neuen Zeit nur außerhalb des Farbtemperaturbreichs möglich
-            if (compareTime(getAstroDate("sunset").getTime(), NewVal, "between")) {
-                await setStateAsync(praefix + "." + Group + "." + "adaptiveCtTime", NewVal, true);
-            } else {
-                await setStateAsync(praefix + "." + Group + "." + "adaptiveCtTime", OldVal, true);
-            }
             break;
         case "dimmUp":
             await setStateAsync(praefix + "." + Group + "." + "bri", (Math.min(Math.max(LightGroups[Group].bri + LightGroups[Group].dimmAmount, 10), 100)), false);
