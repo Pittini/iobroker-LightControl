@@ -1,4 +1,4 @@
-const Version = "2.0.17" //vom 21.12.2021 - Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
+const Version = "2.0.18" //vom 21.12.2021 - Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
 
 log("starting LightControl V." + Version);
 
@@ -401,7 +401,8 @@ const GroupTemplate = {
     luxSensorOid: { id: "", common: { read: true, write: true, name: "ObjectId for Luxsensor", type: "string", role: "state", def: LuxSensor } },
     adaptiveBri: { id: "", common: { read: true, write: true, name: "Adaptive Brightness", type: "boolean", role: "switch.enable", def: false } },
     adaptiveCt: { id: "", common: { read: true, write: true, name: "Adaptive Colortemperature", type: "boolean", role: "switch.enable", def: false } },
-    adaptiveCtMode: { id: "", common: { read: true, write: true, name: "Mode for Adaptive Colortemperature", type: "string", role: "switch.mode", def: "solar", states: { linear: "Linear", solar: "Solar", solarInterpolated: "Solar interpolated" } } },
+    adaptiveCtMode: { id: "", common: { read: true, write: true, name: "Mode for Adaptive Colortemperature", type: "string", role: "switch.mode", def: "solar", states: { linear: "Linear", solar: "Solar", solarInterpolated: "Solar interpolated", timed: "StartYourDay" } } },
+    adaptiveCtTime: { id: "", common: { read: true, write: true, name: "Startzeit Adaptive Colortemperature bei Modus: StartYourDay", type: "string", unit: "Uhr", role: "value", def: "06:00" } },
     powerCleaningLight: { id: "", common: { read: true, write: true, name: "Power", type: "boolean", role: "switch.power", def: false } },
     isMotion: { id: "", common: { read: true, write: false, name: "Combines the states of all Sensors for this Group", type: "boolean", role: "indicator.motion", def: false } },
     autoOffTimed: {
@@ -866,14 +867,16 @@ function AdaptiveCt() {
     let adaptiveCtLinear = 0;
     let adaptiveCtSolar = 0;
     let adaptiveCtSolarInterpolated = 0;
+    let adaptiveCtTimed = 0;
 
     let sunset = getAstroDate("sunset").getTime();  //Sonnenuntergang
     let sunrise = getAstroDate("sunrise").getTime(); //Sonnenaufgang
     let solarNoon = getAstroDate("solarNoon").getTime(); //Höchster Sonnenstand (Mittag)
-
+    let morningTime = 0;
+    
     let sunMinutesDay = (sunset - sunrise) / 1000 / 60;
     let RangePerMinute = CtRange / sunMinutesDay;
-
+    
     let now = new Date();
     let sunpos = suncalc.getPosition(now, lat, long);
     let sunposNoon = suncalc.getPosition(solarNoon, lat, long);
@@ -890,7 +893,8 @@ function AdaptiveCt() {
         adaptiveCtSolar = Math.round(minCt + sunMinutesDay * RangePerMinute * sunpos.altitude); // Solar = Sinusrampe entsprechend direkter Elevation, max Ct differiert nach Jahreszeiten
         adaptiveCtSolarInterpolated = Math.round(minCt + sunMinutesDay * RangePerMinute * sunpos.altitude * (1 / sunposNoon.altitude));// SolarInterpolated = Wie Solar, jedoch wird der Wert so hochgerechnet dass immer zum Sonnenmittag maxCt gesetzt wird, unabhängig der Jahreszeit
     };
-    if (logging) log("adaptiveCtLinear=" + adaptiveCtLinear + " adaptiveCtSolar=" + adaptiveCtSolar + " adaptiveCtSolarInterpolated=" + adaptiveCtSolarInterpolated);
+
+    if (logging) log("adaptiveCtLinear=" + adaptiveCtLinear + " adaptiveCtSolar=" + adaptiveCtSolar + " adaptiveCtSolarInterpolated=" + adaptiveCtSolarInterpolated + " adaptiveCtTimed=" + adaptiveCtTimed);
 
     for (let Group in LightGroups) {
         switch (LightGroups[Group].adaptiveCtMode) {
@@ -907,6 +911,20 @@ function AdaptiveCt() {
             case "solarInterpolated":
                 if (LightGroups[Group].adaptiveCt && LightGroups[Group].ct != adaptiveCtSolarInterpolated) {
                     setState(praefix + "." + Group + ".ct", adaptiveCtSolarInterpolated, false) //Ack false um SetCt zu triggern
+                };
+                break;
+            case "timed":
+                if (LightGroups[Group].adaptiveCt && LightGroups[Group].ct != adaptiveCtTimed) {
+                    morningTime = getDateObject(LightGroups[Group].adaptiveCtTime).getTime(); // Aufstehzeit
+                    sunMinutesDay = (sunset - morningTime) / 1000 / 60;
+                    RangePerMinute = CtRange / sunMinutesDay;
+
+                    if (compareTime(morningTime, sunset, 'between')) {
+                        //   log("Absteigend von Morgens bis Abends")        
+                        adaptiveCtTimed = Math.round(maxCt - ((ActualTime - morningTime) / 1000 / 60) * RangePerMinute);
+                    };
+
+                    setState(praefix + "." + Group + ".ct", adaptiveCtTimed, false) //Ack false um SetCt zu triggern
                 };
                 break;
         };
@@ -1468,6 +1486,7 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
             break;
         case "autoOnMotion.enabled":
         case "autoOnMotion.minLux":
+        case "autoOnMotion.bri":
             break;
         case "autoOffLux.enabled":
         case "autoOffLux.operator":
@@ -1532,6 +1551,8 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
             await SetCt(Group, LightGroups[Group].ct);
             break;
         case "adaptiveCtMode":
+            break;
+        case "adaptiveCtTime":
             break;
         case "dimmUp":
             await setStateAsync(praefix + "." + Group + "." + "bri", (Math.min(Math.max(LightGroups[Group].bri + LightGroups[Group].dimmAmount, 10), 100)), false);
@@ -1975,4 +1996,3 @@ const reverseKeywords = {};
 for (const key of Object.keys(cssKeywords)) {
     reverseKeywords[cssKeywords[key]] = key;
 }
-
