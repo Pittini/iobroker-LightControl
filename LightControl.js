@@ -382,14 +382,13 @@ let ActualPresence = true;
 let ActualPresenceCount = 1;
 
 const suncalc = require('suncalc');
-const result = getObject("system.adapter.javascript.0");
+const result = getObject("system.adapter.javascript.2");
 const lat = result.native.latitude;
 const long = result.native.longitude;
 
 const GroupAllTemplate = {
     power: { id: praefix + ".all.power", common: { read: true, write: true, name: "Masterpower", type: "boolean", role: "switch.power", def: false } },
     anyOn: { id: praefix + ".all.anyOn", common: { read: true, write: false, name: "Any Group is On", type: "boolean", role: "indicator.state", def: false } },
-    allOn: { id: praefix + ".all.allOn", common: { read: true, write: false, name: "All Groups are On", type: "boolean", role: "indicator.state", def: false } },
 }
 
 const GroupTemplate = {
@@ -624,10 +623,10 @@ async function SetMasterPower(oldVal, NewVal) {
 }
 
 async function SetLightState() {
-    log("Reaching Light States anyOn and allOn");
+    log("Reaching Light States anyOn and Masterswitch");
     let groupLength = Object.keys(LightGroups).length;
     setStateAsync(praefix + ".all.anyOn", (await countGroups() > 0) ? true : false , true);
-    setStateAsync(praefix + ".all.allOn", (await countGroups() === groupLength) ? true : false, true);
+    setStateAsync(praefix + ".all.power", (await countGroups() === groupLength) ? true : false, true);
 }
 
 async function countGroups() {
@@ -1198,8 +1197,8 @@ async function GroupPowerCleaningLightOnOff(Group, OnOff) {
             log("GroupPowerCleaningLightOnOff: Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff);
         };
     };
-    setState(praefix + "." + Group + ".powerCleaningLight", LightGroups[Group].powerCleaningLight, true) //Ack mit true bestätigen nach abarbeitung
-    setState(praefix + "." + Group + ".power", OnOff, true); //Normale power synchen
+    await setStateAsync(praefix + "." + Group + ".powerCleaningLight", LightGroups[Group].powerCleaningLight, true) //Ack mit true bestätigen nach abarbeitung
+    await setStateAsync(praefix + "." + Group + ".power", OnOff, true); //Normale power synchen
     LightGroups[Group].power = OnOff;
 }
 
@@ -1546,7 +1545,7 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
             if (NewVal != OldVal) {
                 await GroupPowerOnOff(Group, NewVal); //Alles schalten
                 await PowerOnAftercare(Group);
-                await SetLightState(); //anyOn und allOn setzen
+                await SetLightState(); //anyOn und Masterswitch setzen
                 if (!NewVal && LightGroups[Group].autoOffTimed.enabled) { //Wenn ausschalten und autoOffTimed ist aktiv, dieses löschen, da sonst erneute ausschaltung nach Ablauf der Zeit. Ist zusätzlich rampon aktiv, führt dieses zu einem einschalten mit sofort folgenden ausschalten
                     if (typeof AutoOffTimeoutObject[Group] == "object") clearTimeout(AutoOffTimeoutObject[Group]);
                 };
@@ -1561,7 +1560,8 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
 
             break;
         case "powerCleaningLight":
-            GroupPowerCleaningLightOnOff(Group, NewVal);
+            await GroupPowerCleaningLightOnOff(Group, NewVal);
+            await SetLightState(); //anyOn und Masterswitch setzen
             break;
         case "adaptiveBri":
             //  AdaptiveBri(Group);
