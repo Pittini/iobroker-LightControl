@@ -382,7 +382,7 @@ let ActualPresence = true;
 let ActualPresenceCount = 1;
 
 const suncalc = require('suncalc');
-const result = getObject("system.adapter.javascript.2");
+const result = getObject("system.adapter.javascript.0");
 const lat = result.native.latitude;
 const long = result.native.longitude;
 
