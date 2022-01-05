@@ -47,6 +47,9 @@ In der channelroot findet ihr die allgemeinen Datenpunkte der Gruppe, in den Unt
 ![lc_info2.png](/admin/lc_info2.png) 
 
 ## Changelog
+### V2.0.19 (05.01.2022)
+* Add: Info-Datenpunkte "allOn" und "anyOn" in der Gruppe "all".
+* Fix: Fehler bei der Erstellung von "all" Datenpunkten, wenn mehr als einer.
 ### V2.0.18 (16.12.2021)
 * Add: Zusätzlicher Modus "StartYourDay": Adaptive Farbtemperatur von Zeit xy (maxCT) bis Sonnenuntergang (minCT)
 ### V2.0.17 (09.12.2021)
