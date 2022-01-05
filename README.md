@@ -15,12 +15,14 @@ Lichtsteuerung für Leuchtmittel unterschiedlicher Hersteller
 * AutoOn bei Dunkelheit
 * AutoOn bei Anwesenheitszählererhöhung ab bestimmter Helligkeit (Begrüßungslicht bei heimkommen)
 * Override on (Putzlicht)
+* Masterswitch um alle Gruppen gemeinsam ein- und auszuschalten
+* Info Datenpunkte für "alle Gruppen sind ein" und "beliebige Gruppe ist ein"
 * Adaptive Helligkeit (Bei Aussenhelligkeit über 1000 Lux volle Helligkeit (100%), darunter linear dunkler bis 0 Lux (2%))
 * Adaptive Farbtemperatur (4 dynamische Modi: Linear (linear ansteigend von Sonnenaufgang bis Sonnenmittag, dann linear abfallend bis Sonnenuntergang), Solar (entsprechend der Sonnenhöhe errechneter Sinus, maxCt ist Jahreszeitenabhängig), SolarInterpoliert (wie Solar, jedoch ohne Jahreszeitenabhängigkeit), StartYourDay (linear Absteigend von Start-Uhrzeit - Sonnenuntergang)  ![lc_info0.png](/admin/lc_info0.png) 
 
 * Blinken (Alarm, Türklingel, etc.)
 * Vis View (Import via "Widgets importieren")
-* 
+
 ![lc_info1.png](/admin/lc_info1.png) 
 
 ## Installation
@@ -48,7 +50,7 @@ In der channelroot findet ihr die allgemeinen Datenpunkte der Gruppe, in den Unt
 
 ## Changelog
 ### V2.0.19 (05.01.2022)
-* Add: Info-Datenpunkte "allOn" und "anyOn" in der Gruppe "all".
+* Add: Info-Datenpunkte "allOn" (Alle Gruppen sind an) und "anyOn" (beliebige Gruppe ist an) in Gruppe "all".
 * Fix: Fehler bei der Erstellung von "all" Datenpunkten, wenn mehr als einer.
 ### V2.0.18 (16.12.2021)
 * Add: Zusätzlicher Modus "StartYourDay": Adaptive Farbtemperatur von Zeit xy (maxCT) bis Sonnenuntergang (minCT)
