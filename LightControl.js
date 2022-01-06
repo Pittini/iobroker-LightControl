@@ -1,4 +1,4 @@
-const Version = "2.0.18" //vom 21.12.2021 - Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
+const Version = "2.0.19" //vom 6.1.2022 - Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
 
 log("starting LightControl V." + Version);
 
@@ -387,7 +387,8 @@ const lat = result.native.latitude;
 const long = result.native.longitude;
 
 const GroupAllTemplate = {
-    power: { id: praefix + ".all.power", common: { read: true, write: true, name: "Masterpower", type: "boolean", role: "switch.power", def: false } }
+    power: { id: praefix + ".all.power", common: { read: true, write: true, name: "Masterpower", type: "boolean", role: "switch.power", def: false } },
+    anyOn: { id: praefix + ".all.anyOn", common: { read: true, write: false, name: "Any Group is On", type: "boolean", role: "indicator.state", def: false } },
 }
 
 const GroupTemplate = {
@@ -581,17 +582,18 @@ async function init() {
 
     for (let prop1 in GroupAllTemplate) { // Sondergruppe "all" anlegen
         if (!await existsStateAsync(GroupAllTemplate[prop1].id)) {// Prüfen ob state noch nicht vorhanden
-            await createStateAsync(GroupAllTemplate[prop1].id, GroupTemplate[prop1].common);//State anlegen
+            await createStateAsync(GroupAllTemplate[prop1].id, GroupAllTemplate[prop1].common);//State anlegen
             log("Init: Created datapoint " + GroupAllTemplate[prop1].id);
             DpCount++;
         } else {
-            if (logging) log("Init: Datapoint " + GroupTemplate[prop1].id + " still exists, skipping creation and setting trigger");
+            if (logging) log("Init: Datapoint " + GroupAllTemplate[prop1].id + " still exists, skipping creation and setting trigger");
         };
-        on({ id: GroupAllTemplate[prop1].id, change: "any", ack: false }, function (dp) {
-            log("Init: Triggered " + dp.id + " new value is " + dp.state.val);
-            if (prop1 == "power") SetMasterPower(dp.oldState.val, dp.state.val);
-        });
-
+        if (GroupAllTemplate[prop1].common.write) { //Trigger für alle Template Dps erstellen, außer Dp ist readonly
+            on({ id: GroupAllTemplate[prop1].id, change: "any", ack: false }, function (dp) {
+                log("Init: Triggered " + dp.id + " new value is " + dp.state.val);
+                if (prop1 == "power") SetMasterPower(dp.oldState.val, dp.state.val);
+            });
+        }
     };
     if (!await existsObjectAsync(praefix + "." + "all")) { //Gruppenchannel anlegen wenn noch nicht vorhanden
         await setObjectAsync(praefix + "." + "all", { type: 'channel', common: { name: "Sammelfunktion um alle Gruppen gleichzeitig zu steuern" }, native: {} });
@@ -618,6 +620,23 @@ async function SetMasterPower(oldVal, NewVal) {
         await setStateAsync(praefix + "." + Group + ".power", NewVal, false);
     };
 
+}
+
+async function SetLightState() {
+    log("Reaching Light States anyOn and Masterswitch");
+    let groupLength = Object.keys(LightGroups).length;
+    setStateAsync(praefix + ".all.anyOn", (await countGroups() > 0) ? true : false , true);
+    setStateAsync(praefix + ".all.power", (await countGroups() === groupLength) ? true : false, true);
+}
+
+async function countGroups() {
+    let i = 0;        
+    for (let Group in LightGroups) {            
+        if ((await getStateAsync(praefix + "." + Group + ".power")).val) {
+            i++;
+        };
+    };
+    return i;
 }
 
 async function clearRampOnIntervals(Group) {
@@ -1178,8 +1197,8 @@ async function GroupPowerCleaningLightOnOff(Group, OnOff) {
             log("GroupPowerCleaningLightOnOff: Switching " + Light + " " + LightGroups[Group].lights[Light].power.oid + " to: " + OnOff);
         };
     };
-    setState(praefix + "." + Group + ".powerCleaningLight", LightGroups[Group].powerCleaningLight, true) //Ack mit true bestätigen nach abarbeitung
-    setState(praefix + "." + Group + ".power", OnOff, true); //Normale power synchen
+    await setStateAsync(praefix + "." + Group + ".powerCleaningLight", LightGroups[Group].powerCleaningLight, true) //Ack mit true bestätigen nach abarbeitung
+    await setStateAsync(praefix + "." + Group + ".power", OnOff, true); //Normale power synchen
     LightGroups[Group].power = OnOff;
 }
 
@@ -1525,7 +1544,8 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
         case "power":
             if (NewVal != OldVal) {
                 await GroupPowerOnOff(Group, NewVal); //Alles schalten
-                await PowerOnAftercare(Group)
+                await PowerOnAftercare(Group);
+                await SetLightState(); //anyOn und Masterswitch setzen
                 if (!NewVal && LightGroups[Group].autoOffTimed.enabled) { //Wenn ausschalten und autoOffTimed ist aktiv, dieses löschen, da sonst erneute ausschaltung nach Ablauf der Zeit. Ist zusätzlich rampon aktiv, führt dieses zu einem einschalten mit sofort folgenden ausschalten
                     if (typeof AutoOffTimeoutObject[Group] == "object") clearTimeout(AutoOffTimeoutObject[Group]);
                 };
@@ -1540,7 +1560,8 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
 
             break;
         case "powerCleaningLight":
-            GroupPowerCleaningLightOnOff(Group, NewVal);
+            await GroupPowerCleaningLightOnOff(Group, NewVal);
+            await SetLightState(); //anyOn und Masterswitch setzen
             break;
         case "adaptiveBri":
             //  AdaptiveBri(Group);
