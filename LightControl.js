@@ -622,6 +622,12 @@ async function SetMasterPower(oldVal, NewVal) {
 
 }
 
+async function SetLightStateTrigger() {
+    on({ id: praefix + "." + Group + ".power, change: "ne", ack: true }, function (dp) {
+        await SetLightState();
+    });
+}
+
 async function SetLightState() {
     log("Reaching Light States anyOn and Masterswitch");
     let groupLength = Object.keys(LightGroups).length;
@@ -1441,6 +1447,7 @@ async function main() {
     await GlobalPresenceHandling();
     await GlobalLuxHandling();
     await init();
+    await SetLightStateTrigger();
     Ticker();
 }
 
@@ -1545,7 +1552,6 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
             if (NewVal != OldVal) {
                 await GroupPowerOnOff(Group, NewVal); //Alles schalten
                 await PowerOnAftercare(Group);
-                await SetLightState(); //anyOn und Masterswitch setzen
                 if (!NewVal && LightGroups[Group].autoOffTimed.enabled) { //Wenn ausschalten und autoOffTimed ist aktiv, dieses löschen, da sonst erneute ausschaltung nach Ablauf der Zeit. Ist zusätzlich rampon aktiv, führt dieses zu einem einschalten mit sofort folgenden ausschalten
                     if (typeof AutoOffTimeoutObject[Group] == "object") clearTimeout(AutoOffTimeoutObject[Group]);
                 };
@@ -1561,7 +1567,6 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
             break;
         case "powerCleaningLight":
             await GroupPowerCleaningLightOnOff(Group, NewVal);
-            await SetLightState(); //anyOn und Masterswitch setzen
             break;
         case "adaptiveBri":
             //  AdaptiveBri(Group);
