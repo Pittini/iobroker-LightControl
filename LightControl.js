@@ -622,12 +622,6 @@ async function SetMasterPower(oldVal, NewVal) {
 
 }
 
-async function SetLightStateTrigger() {
-    on({ id: praefix + "." + Group + ".power, change: "ne", ack: true }, function (dp) {
-        await SetLightState();
-    });
-}
-
 async function SetLightState() {
     log("Reaching Light States anyOn and Masterswitch");
     let groupLength = Object.keys(LightGroups).length;
@@ -1053,7 +1047,7 @@ async function SimpleGroupPowerOnOff(Group, OnOff) {
     };
     setState(praefix + "." + Group + ".power", OnOff, true); // Power on mit ack bestätigen, bzw. bei Auto Funktionen nach Ausführung den DP setzen
     LightGroups[Group].power = OnOff;
-
+    await SetLightState();
     return true;
 }
 
@@ -1174,6 +1168,7 @@ async function GroupPowerOnOff(Group, OnOff) {
 
     setState(praefix + "." + Group + ".power", OnOff, true); // Power on mit ack bestätigen, bzw. bei Auto Funktionen nach Ausführung den DP setzen
     LightGroups[Group].power = OnOff;
+    await SetLightState();
     return true;
 }
 
@@ -1206,6 +1201,7 @@ async function GroupPowerCleaningLightOnOff(Group, OnOff) {
     await setStateAsync(praefix + "." + Group + ".powerCleaningLight", LightGroups[Group].powerCleaningLight, true) //Ack mit true bestätigen nach abarbeitung
     await setStateAsync(praefix + "." + Group + ".power", OnOff, true); //Normale power synchen
     LightGroups[Group].power = OnOff;
+    await SetLightState();
 }
 
 function Ticker() {
@@ -1347,6 +1343,7 @@ async function blink(Group) {
         };
         LightGroups[Group].power = true;
         await setStateAsync(praefix + "." + Group + ".power", true, true);
+        await SetLightState();
 
         if (LightGroups[Group].blink.bri != 0) {
             await SetBrightness(Group, LightGroups[Group].blink.bri);
@@ -1374,6 +1371,7 @@ async function blink(Group) {
                 };
                 LightGroups[Group].power = false;
                 setStateAsync(praefix + "." + Group + ".power", false, true);
+                SetLightState();
             } else {
                 log("an " + loopcount);
                 for (let Light in LightGroups[Group].lights) {
@@ -1382,6 +1380,7 @@ async function blink(Group) {
                 };
                 LightGroups[Group].power = true;
                 setStateAsync(praefix + "." + Group + ".power", true, true);
+                SetLightState();
             };
         } else {
             clearInterval(BlinkIntervalObj[Group]);
@@ -1447,7 +1446,6 @@ async function main() {
     await GlobalPresenceHandling();
     await GlobalLuxHandling();
     await init();
-    await SetLightStateTrigger();
     Ticker();
 }
 
