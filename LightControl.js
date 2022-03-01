@@ -1487,10 +1487,11 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
             break;
         case "isMotion":
             LightGroups[Group].isMotion = NewVal;
-
+            
             if (!LightGroups[Group].powerCleaningLight) {
                 if (LightGroups[Group].isMotion && LightGroups[Group].power) { //AutoOff Timer wird nach jeder Bewegung neugestartet
                     log("Controller: Motion detected, restarting AutoOff Timer for Group " + Group + " (" + LightGroups[Group].description + " )");
+                    await clearAutoOffTimeouts(Group);
                     AutoOffTimed(Group);
                 };
                 await AutoOnMotion(Group);
@@ -1551,7 +1552,7 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
                 await GroupPowerOnOff(Group, NewVal); //Alles schalten
                 await PowerOnAftercare(Group);
                 if (!NewVal && LightGroups[Group].autoOffTimed.enabled) { //Wenn ausschalten und autoOffTimed ist aktiv, dieses löschen, da sonst erneute ausschaltung nach Ablauf der Zeit. Ist zusätzlich rampon aktiv, führt dieses zu einem einschalten mit sofort folgenden ausschalten
-                    if (typeof AutoOffTimeoutObject[Group] == "object") clearTimeout(AutoOffTimeoutObject[Group]);
+                    await clearAutoOffTimeouts(Group);
                 };
                 if (!NewVal && LightGroups[Group].powerCleaningLight) { //Wenn via Cleaninglight angeschaltet wurde, jetzt aber normal ausgeschaltet, powerCleaningLight synchen um Blockade der Autofunktionen zu vermeiden
                     LightGroups[Group].powerCleaningLight = false;
