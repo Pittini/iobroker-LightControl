@@ -49,7 +49,7 @@ In der channelroot findet ihr die allgemeinen Datenpunkte der Gruppe, in den Unt
 ![lc_info2.png](/admin/lc_info2.png) 
 
 ## Changelog
-### V2.0.20 (17.06.2022)
+### V2.0.20 (11.03.2022)
 * Fix: Der Lichtstatus "anyOn" und "Masterswitch" wird nun bei allen Funktionen berücksichtigt und entsprechend gesetzt.
 ### V2.0.19 (05.01.2022)
 * Add: Info-Datenpunkt "anyOn" (beliebige Gruppe ist an) in Gruppe "all".
