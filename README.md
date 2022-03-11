@@ -51,6 +51,7 @@ In der channelroot findet ihr die allgemeinen Datenpunkte der Gruppe, in den Unt
 ## Changelog
 ### V2.0.20 (11.03.2022)
 * Fix: Der Lichtstatus "anyOn" und "Masterswitch" wird nun bei allen Funktionen berücksichtigt und entsprechend gesetzt.
+* Fix: AutoOff Timeout wird nun korrekt behandelt.
 ### V2.0.19 (05.01.2022)
 * Add: Info-Datenpunkt "anyOn" (beliebige Gruppe ist an) in Gruppe "all".
 * Fix: Fehler bei der Erstellung von "all" Datenpunkten, wenn mehr als einer.
