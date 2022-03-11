@@ -1,4 +1,4 @@
-const Version = "2.0.19" //vom 6.1.2022 - Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
+const Version = "2.0.20" //vom 11.03.2022 - Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
 
 log("starting LightControl V." + Version);
 
@@ -1047,7 +1047,7 @@ async function SimpleGroupPowerOnOff(Group, OnOff) {
     };
     setState(praefix + "." + Group + ".power", OnOff, true); // Power on mit ack bestätigen, bzw. bei Auto Funktionen nach Ausführung den DP setzen
     LightGroups[Group].power = OnOff;
-
+    await SetLightState();
     return true;
 }
 
@@ -1168,6 +1168,7 @@ async function GroupPowerOnOff(Group, OnOff) {
 
     setState(praefix + "." + Group + ".power", OnOff, true); // Power on mit ack bestätigen, bzw. bei Auto Funktionen nach Ausführung den DP setzen
     LightGroups[Group].power = OnOff;
+    await SetLightState();
     return true;
 }
 
@@ -1200,6 +1201,7 @@ async function GroupPowerCleaningLightOnOff(Group, OnOff) {
     await setStateAsync(praefix + "." + Group + ".powerCleaningLight", LightGroups[Group].powerCleaningLight, true) //Ack mit true bestätigen nach abarbeitung
     await setStateAsync(praefix + "." + Group + ".power", OnOff, true); //Normale power synchen
     LightGroups[Group].power = OnOff;
+    await SetLightState();
 }
 
 function Ticker() {
@@ -1341,6 +1343,7 @@ async function blink(Group) {
         };
         LightGroups[Group].power = true;
         await setStateAsync(praefix + "." + Group + ".power", true, true);
+        await SetLightState();
 
         if (LightGroups[Group].blink.bri != 0) {
             await SetBrightness(Group, LightGroups[Group].blink.bri);
@@ -1368,6 +1371,7 @@ async function blink(Group) {
                 };
                 LightGroups[Group].power = false;
                 setStateAsync(praefix + "." + Group + ".power", false, true);
+                SetLightState();
             } else {
                 log("an " + loopcount);
                 for (let Light in LightGroups[Group].lights) {
@@ -1376,6 +1380,7 @@ async function blink(Group) {
                 };
                 LightGroups[Group].power = true;
                 setStateAsync(praefix + "." + Group + ".power", true, true);
+                SetLightState();
             };
         } else {
             clearInterval(BlinkIntervalObj[Group]);
@@ -1482,10 +1487,11 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
             break;
         case "isMotion":
             LightGroups[Group].isMotion = NewVal;
-
+            
             if (!LightGroups[Group].powerCleaningLight) {
                 if (LightGroups[Group].isMotion && LightGroups[Group].power) { //AutoOff Timer wird nach jeder Bewegung neugestartet
                     log("Controller: Motion detected, restarting AutoOff Timer for Group " + Group + " (" + LightGroups[Group].description + " )");
+                    await clearAutoOffTimeouts(Group);
                     AutoOffTimed(Group);
                 };
                 await AutoOnMotion(Group);
@@ -1545,9 +1551,8 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
             if (NewVal != OldVal) {
                 await GroupPowerOnOff(Group, NewVal); //Alles schalten
                 await PowerOnAftercare(Group);
-                await SetLightState(); //anyOn und Masterswitch setzen
                 if (!NewVal && LightGroups[Group].autoOffTimed.enabled) { //Wenn ausschalten und autoOffTimed ist aktiv, dieses löschen, da sonst erneute ausschaltung nach Ablauf der Zeit. Ist zusätzlich rampon aktiv, führt dieses zu einem einschalten mit sofort folgenden ausschalten
-                    if (typeof AutoOffTimeoutObject[Group] == "object") clearTimeout(AutoOffTimeoutObject[Group]);
+                    await clearAutoOffTimeouts(Group);
                 };
                 if (!NewVal && LightGroups[Group].powerCleaningLight) { //Wenn via Cleaninglight angeschaltet wurde, jetzt aber normal ausgeschaltet, powerCleaningLight synchen um Blockade der Autofunktionen zu vermeiden
                     LightGroups[Group].powerCleaningLight = false;
@@ -1561,7 +1566,6 @@ async function Controller(Group, prop1, OldVal, NewVal) { //Used by all
             break;
         case "powerCleaningLight":
             await GroupPowerCleaningLightOnOff(Group, NewVal);
-            await SetLightState(); //anyOn und Masterswitch setzen
             break;
         case "adaptiveBri":
             //  AdaptiveBri(Group);
