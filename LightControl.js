@@ -506,6 +506,11 @@ async function init() {
     //Datenpunkte anlegen, Objekte erweitern, Daten einlesen, Trigger erzeugen
     for (let Group in LightGroups) { //Gruppen durchgehen
         await DoAllTheSensorThings(Group); //Sonderfall sensors
+        
+        if (!await existsObjectAsync(praefix + "." + Group)) { //Gruppenchannel anlegen wenn noch nicht vorhanden
+            await setObjectAsync(praefix + "." + Group, { type: 'channel', common: { name: LightGroups[Group].description }, native: {} });
+            log("Init: Channel " + praefix + "." + Group + " created");
+        };
 
         for (let prop1 in GroupTemplate) { // Template Properties 1. Ebene durchgehen
             if (typeof GroupTemplate[prop1].id == "undefined") { //Wenn keine id zu finden, nächste, 2. Ebene durchlaufen
@@ -567,11 +572,6 @@ async function init() {
                     });
                 };
             };
-        };
-
-        if (!await existsObjectAsync(praefix + "." + Group)) { //Gruppenchannel anlegen wenn noch nicht vorhanden
-            await setObjectAsync(praefix + "." + Group, { type: 'channel', common: { name: LightGroups[Group].description }, native: {} });
-            log("Init: Channel " + praefix + "." + Group + " created");
         };
 
         //  await setStateAsync(praefix + "." + Group + ".autoOnLux.dailyLock", false, true);
