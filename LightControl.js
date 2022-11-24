@@ -1,4 +1,4 @@
-const Version = "2.0.20" //vom 11.03.2022 - Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
+const Version = "2.0.21" //vom 24.11.2022 - Skript um Lichter in Helligkeit, Farbe und Farbtemp global zu steuern - Git: https://github.com/Pittini/iobroker-LightControl - Forum: https://forum.iobroker.net/topic/36578/vorlage-lightcontrol
 
 log("starting LightControl V." + Version);
 
@@ -506,6 +506,11 @@ async function init() {
     //Datenpunkte anlegen, Objekte erweitern, Daten einlesen, Trigger erzeugen
     for (let Group in LightGroups) { //Gruppen durchgehen
         await DoAllTheSensorThings(Group); //Sonderfall sensors
+        
+        if (!await existsObjectAsync(praefix + "." + Group)) { //Gruppenchannel anlegen wenn noch nicht vorhanden
+            await setObjectAsync(praefix + "." + Group, { type: 'channel', common: { name: LightGroups[Group].description }, native: {} });
+            log("Init: Channel " + praefix + "." + Group + " created");
+        };
 
         for (let prop1 in GroupTemplate) { // Template Properties 1. Ebene durchgehen
             if (typeof GroupTemplate[prop1].id == "undefined") { //Wenn keine id zu finden, nächste, 2. Ebene durchlaufen
@@ -567,11 +572,6 @@ async function init() {
                     });
                 };
             };
-        };
-
-        if (!await existsObjectAsync(praefix + "." + Group)) { //Gruppenchannel anlegen wenn noch nicht vorhanden
-            await setObjectAsync(praefix + "." + Group, { type: 'channel', common: { name: LightGroups[Group].description }, native: {} });
-            log("Init: Channel " + praefix + "." + Group + " created");
         };
 
         //  await setStateAsync(praefix + "." + Group + ".autoOnLux.dailyLock", false, true);
