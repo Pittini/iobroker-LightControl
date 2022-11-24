@@ -49,6 +49,8 @@ In der channelroot findet ihr die allgemeinen Datenpunkte der Gruppe, in den Unt
 ![lc_info2.png](/admin/lc_info2.png) 
 
 ## Changelog
+### V2.0.21 (24.11.2022)
+* Fix: Gruppen-Channels werden mit Admin 6 nun wieder korrekt erstellt.
 ### V2.0.20 (11.03.2022)
 * Fix: Der Lichtstatus "anyOn" und "Masterswitch" wird nun bei allen Funktionen berücksichtigt und entsprechend gesetzt.
 * Fix: AutoOff Timeout wird nun korrekt behandelt.
